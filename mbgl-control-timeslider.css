@@ -1,0 +1,13 @@
+div.mapboxgl-ctrl.mbgl-control-timeslider {
+    width: calc(100vw - 80px);
+
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+div.mapboxgl-ctrl.mbgl-control-timeslider input[type="range"] {
+    width: 100%;
+
+    margin-top: 5px; /* visual vertical balance */
+}
