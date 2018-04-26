@@ -87,6 +87,21 @@ export const GLMAP_STYLE = {
       "filter": [ 'all', [ "<=", "START", "9999/12/31" ], [ ">", "END", "9999/12/31" ] ],  // filter: start date and end date clauses, drop in a year to see what had any presence during that year
     },
     {
+      "id": "state-boundaries-historical-hover",
+      "source": "states-historical",
+      "source-layer": "states",
+      "type": "fill",
+      "minzoom": STATES_MIN_ZOOM,
+      "paint": {
+        "fill-color": "white",
+        "fill-opacity": 0.5,
+      },
+      "layout" : {
+        "visibility": "visible",
+      },
+      "filter": [ "==", "IDNUM", -1 ],  // for highlighting by this unique feature ID
+    },
+    {
       "id": "county-boundaries-historical",
       "source": "counties-historical",
       "source-layer": "counties",
@@ -100,6 +115,21 @@ export const GLMAP_STYLE = {
         "visibility": "none",
       },
       "filter": [ 'all', [ "<=", "START", "9999/12/31" ], [ ">", "END", "9999/12/31" ] ],  // filter: start date and end date clauses, drop in a year to see what had any presence during that year
+    },
+    {
+      "id": "county-boundaries-historical-hover",
+      "source": "counties-historical",
+      "source-layer": "counties",
+      "type": "fill",
+      "minzoom": COUNTIES_MIN_ZOOM,
+      "paint": {
+        "fill-color": "white",
+        "fill-opacity": 0.5,
+      },
+      "layout" : {
+        "visibility": "visible",
+      },
+      "filter": [ "==", "IDNUM", -1 ],  // for highlighting by this unique feature ID
     },
     /*
     {

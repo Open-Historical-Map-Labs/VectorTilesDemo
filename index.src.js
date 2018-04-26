@@ -3,6 +3,8 @@ import { GLMAP_STYLE } from './maplayers';
 
 import { TimeSliderControl } from './js/mbgl-control-timeslider';
 import { LayerPickerControl } from './js/mbgl-control-layerpicker';
+import { MapHoversControl } from './js/mbgl-control-mousehovers';
+import { MapClicksControl } from './js/mbgl-control-mouseclicks';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 10;
@@ -38,45 +40,55 @@ $(document).ready(function () {
     MAP.LAYERPICKER = new LayerPickerControl();
     MAP.addControl(MAP.LAYERPICKER);
 
-    //
-    // mouse-hover for an informational popup
-    // the mousemove handler is set up after the load has fired, to avoid annoying console errors when the mouse is moved while it's still loading
-    // the technique used below creates a 3px buffer around the point, and queries that
-    // for polygon data this isn't necessary, but we'll likely work in point and line data some day and this works for those as well
-    //
-    MAP.POPUP = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false
+    MAP.HOVERS = new MapHoversControl({
+        layers: {
+            'state-boundaries-historical': {
+                enter: function (mouseevent) {
+                    // there's a highlight layer: same data as state boundaries, but alternative style to be shown in conjunction with the visible one
+                    const featureid = mouseevent.features[0].properties.IDNUM;
+                    const tooltip = mouseevent.features[0].properties.NAME;
+                    MAP.setFilter('state-boundaries-historical-hover', [ "==", "IDNUM", featureid ]);
+                    document.getElementById('map').title = tooltip;
+                    MAP.getCanvas().style.cursor = 'crosshair';
+                },
+                leave: function (mouseevent) {
+                    MAP.setFilter('state-boundaries-historical-hover', [ "==", "IDNUM", -1 ]);
+                    document.getElementById('map').title = "";
+                    MAP.getCanvas().style.cursor = 'inherit';
+                },
+            },
+            'county-boundaries-historical': {
+                enter: function (mouseevent) {
+                    // there's a highlight layer: same data as county boundaries, but alternative style to be shown in conjunction with the visible one
+                    const featureid = mouseevent.features[0].properties.IDNUM;
+                    const tooltip = mouseevent.features[0].properties.NAME;
+                    MAP.setFilter('county-boundaries-historical-hover', [ "==", "IDNUM", featureid ]);
+                    document.getElementById('map').title = tooltip;
+                    MAP.getCanvas().style.cursor = 'crosshair';
+                },
+                leave: function (mouseevent) {
+                    MAP.setFilter('county-boundaries-historical-hover', [ "==", "IDNUM", -1 ]);
+                    document.getElementById('map').title = "";
+                    MAP.getCanvas().style.cursor = 'inherit';
+                },
+            },
+        }
     });
+    MAP.addControl(MAP.HOVERS);
 
-    MAP.on('load', function () {
-        MAP.on('mousemove', function (event) {
-            const tooltip_layer_ids = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
-            const pxbuffer = 3;
-            const canvas   = MAP.getCanvasContainer();
-            const rect     = canvas.getBoundingClientRect();
-            const glpoint  = new mapboxgl.Point(event.originalEvent.clientX - rect.left - canvas.clientLeft, event.originalEvent.clientY - rect.top - canvas.clientTop);
-            const pixelbox = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
-            const features = MAP.queryRenderedFeatures(pixelbox, { layers: tooltip_layer_ids });
-
-            if (features.length) {
-                // open a popup
-                const attribs = features[0].properties;
-                // console.log(attribs);
-
-                const description = `
-                    <h1>${attribs.NAME}</h1>
-                    <p>${attribs.START} to ${attribs.END}</p>
-                    <p>${attribs.CHANGE}</p>
-                `;
-                MAP.POPUP.setLngLat(event.lngLat).setHTML(description).addTo(MAP);
-            }
-            else {
-                // remove the popup
-                MAP.POPUP.remove();
-            }
-        });
+    MAP.CLICKS = new MapClicksControl({
+        layers: {
+            'state-boundaries-historical': function (clickevent) {
+                const featureid = clickevent.features[0].properties.IDNUM;
+                populateInfoPanel('state-boundaries-historical', featureid);
+            },
+            'county-boundaries-historical': function (clickevent) {
+                const featureid = clickevent.features[0].properties.IDNUM;
+                populateInfoPanel('state-boundaries-historical', featureid);
+            },
+        }
     });
+    MAP.addControl(MAP.CLICKS);
 
     //
     // startup and initial state, once the GL Map has loaded
@@ -86,3 +98,7 @@ $(document).ready(function () {
         // this is where one would load a querystring/hash to set up initial state: filtering and layer visibility, etc.
     });
 });
+
+function populateInfoPanel(layerid, featureid) {
+    console.log([ 'populateInfoPanel()', layerid, featureid ]);
+}
