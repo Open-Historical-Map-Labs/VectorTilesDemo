@@ -77,16 +77,18 @@ $(document).ready(function () {
     MAP.addControl(MAP.HOVERS);
 
     MAP.CLICKS = new MapClicksControl({
-        layers: {
-            'state-boundaries-historical': function (clickevent) {
-                const featureid = clickevent.features[0].properties.IDNUM;
-                populateInfoPanel('state-boundaries-historical', featureid);
-            },
-            'county-boundaries-historical': function (clickevent) {
-                const featureid = clickevent.features[0].properties.IDNUM;
-                populateInfoPanel('state-boundaries-historical', featureid);
-            },
-        }
+        click: function (clickevent) {
+            // this version queries a box around the click, which is overkill for our use case of all polygons
+            // but some day we'll add points and lines, then increasing pxbuffer to 3 will make it easier to click those
+            const clicklayers   = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
+            const pxbuffer      = 1;
+            const canvas        = MAP.getCanvasContainer();
+            const rect          = canvas.getBoundingClientRect();
+            const glpoint       = new mapboxgl.Point(clickevent.originalEvent.clientX - rect.left - canvas.clientLeft, clickevent.originalEvent.clientY - rect.top - canvas.clientTop);
+            const pixelbox      = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
+            const features      = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
+            populateInfoPanel(features);
+        },
     });
     MAP.addControl(MAP.CLICKS);
 
@@ -99,6 +101,7 @@ $(document).ready(function () {
     });
 });
 
-function populateInfoPanel(layerid, featureid) {
-    console.log([ 'populateInfoPanel()', layerid, featureid ]);
+// given a set of features, load them 
+function populateInfoPanel(features) {
+console.log([ 'populateInfoPanel()',  features ]);
 }
