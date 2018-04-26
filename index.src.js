@@ -5,6 +5,7 @@ import { TimeSliderControl } from './js/mbgl-control-timeslider';
 import { LayerPickerControl } from './js/mbgl-control-layerpicker';
 import { MapHoversControl } from './js/mbgl-control-mousehovers';
 import { MapClicksControl } from './js/mbgl-control-mouseclicks';
+import { InspectorPanelControl } from './js/mbgl-control-inspectorpanel';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 10;
@@ -39,6 +40,26 @@ $(document).ready(function () {
 
     MAP.LAYERPICKER = new LayerPickerControl();
     MAP.addControl(MAP.LAYERPICKER);
+
+    MAP.INSPECTORPANEL = new InspectorPanelControl({
+        templates: {
+            'states-historical': function (feature) {
+                return `
+                    State: ${feature.properties.NAME}<br/>
+                    Dates: ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}
+                    <div>${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
+                `;
+            },
+            'counties-historical': function (feature) {
+                return `
+                    County: ${feature.properties.NAME}<br/>
+                    Dates: ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}
+                    <div>${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
+                `;
+            },
+        }
+    });
+    MAP.addControl(MAP.INSPECTORPANEL);
 
     MAP.HOVERS = new MapHoversControl({
         layers: {
@@ -87,12 +108,13 @@ $(document).ready(function () {
             const glpoint       = new mapboxgl.Point(clickevent.originalEvent.clientX - rect.left - canvas.clientLeft, clickevent.originalEvent.clientY - rect.top - canvas.clientTop);
             const pixelbox      = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
             const features      = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
-            populateInfoPanel(features);
+
+            MAP.INSPECTORPANEL.loadFeatures(features);
         },
     });
     MAP.addControl(MAP.CLICKS);
 
-    //
+    //  
     // startup and initial state, once the GL Map has loaded
     //
     MAP.on('load', function () {
@@ -100,8 +122,3 @@ $(document).ready(function () {
         // this is where one would load a querystring/hash to set up initial state: filtering and layer visibility, etc.
     });
 });
-
-// given a set of features, load them 
-function populateInfoPanel(features) {
-console.log([ 'populateInfoPanel()',  features ]);
-}

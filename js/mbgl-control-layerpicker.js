@@ -27,7 +27,7 @@ const LAYER_GROUPS = [
             {
                 'title': "Counties",
                 'layerids': [ 'county-boundaries-modern-line' ],
-                'visible': true,
+                'visible': false,
             },
         ],
     },

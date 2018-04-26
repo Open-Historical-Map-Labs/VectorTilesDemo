@@ -1,0 +1,34 @@
+div.mapboxgl-ctrl.mbgl-control-inspectorpanel {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+
+    @media screen and (min-width: 768px) {
+        max-width: 50%;
+    }
+
+    h2 {
+        margin: 0;
+    }
+
+    ul {
+        margin-left: -2em;
+    }
+
+    div.mbgl-control-inspectorpanel-listing {
+        div.mbgl-control-inspectorpanel-item {
+            border-bottom: 2px solid silver;
+
+            padding-bottom: 0.5em;
+            padding-top: 0.5em;
+
+            &:last-child {
+                  border-bottom: 0 none transparent;
+            }
+        }
+    }
+
+    &.mbgl-control-inspectorpanel-closed {
+        display: none;
+    }
+}
