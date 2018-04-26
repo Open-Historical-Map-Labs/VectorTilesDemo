@@ -1,3 +1,5 @@
+require('./mbgl-control-timeslider.scss');
+
 export function TimeSliderControl(options) {
     if (! options) options = {};
 

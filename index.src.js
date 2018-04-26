@@ -1,9 +1,7 @@
-import { VECTILES_BASE_URL } from './maplayers';
-import { STATES_MIN_ZOOM } from './maplayers';
-import { COUNTIES_MIN_ZOOM } from './maplayers';
+import { STATES_MIN_ZOOM, COUNTIES_MIN_ZOOM } from './maplayers';
 import { GLMAP_STYLE } from './maplayers';
 
-import { TimeSliderControl } from './mbgl-control-timeslider';
+import { TimeSliderControl } from './js/mbgl-control-timeslider';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 10;
@@ -38,7 +36,9 @@ $(document).ready(function () {
 
     //
     // mouse-hover for an informational popup
-    // the mousemove handler is set up after the load has fired, to avoid annoying consol eerrors when the mouse is moved while it's still loading
+    // the mousemove handler is set up after the load has fired, to avoid annoying console errors when the mouse is moved while it's still loading
+    // the technique used below creates a 3px buffer around the point, and queries that
+    // for polygon data this isn't necessary, but we'll likely work in point and line data some day and this works for those as well
     //
     MAP.POPUP = new mapboxgl.Popup({
         closeButton: false,
@@ -47,23 +47,24 @@ $(document).ready(function () {
 
     MAP.on('load', function () {
         MAP.on('mousemove', function (event) {
-            var tooltip_layer_ids = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
-            var pxbuffer = 1;
-            var canvas   = MAP.getCanvasContainer();
-            var rect     = canvas.getBoundingClientRect();
-            var glpoint  = new mapboxgl.Point(event.originalEvent.clientX - rect.left - canvas.clientLeft, event.originalEvent.clientY - rect.top - canvas.clientTop);
-            var pixelbox = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
-            var features = MAP.queryRenderedFeatures(pixelbox, { layers: tooltip_layer_ids });
+            const tooltip_layer_ids = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
+            const pxbuffer = 3;
+            const canvas   = MAP.getCanvasContainer();
+            const rect     = canvas.getBoundingClientRect();
+            const glpoint  = new mapboxgl.Point(event.originalEvent.clientX - rect.left - canvas.clientLeft, event.originalEvent.clientY - rect.top - canvas.clientTop);
+            const pixelbox = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
+            const features = MAP.queryRenderedFeatures(pixelbox, { layers: tooltip_layer_ids });
 
             if (features.length) {
                 // open a popup
-                var attribs = features[0].properties;
-                console.log(attribs);
+                const attribs = features[0].properties;
+                // console.log(attribs);
 
-                var description = "";
-                description += '<h1>' + attribs.NAME + '</h1>';
-                description += '<p>' + attribs.START + ' to ' + attribs.END + '</p>';
-                description += '<p>' + attribs.CHANGE + '</p>';
+                const description = `
+                    <h1>${attribs.NAME}</h1>
+                    <p>${attribs.START} to ${attribs.END}</p>
+                    <p>${attribs.CHANGE}</p>
+                `;
                 MAP.POPUP.setLngLat(event.lngLat).setHTML(description).addTo(MAP);
             }
             else {
@@ -77,5 +78,7 @@ $(document).ready(function () {
     // startup and initial state, once the GL Map has loaded
     //
     MAP.on('load', function () {
+        // nothing else to do here; controls all have their own map.load handlers to fire up their dynamic actions
+        // this is where one would load a querystring/hash to set up initial state: filtering and layer visibility, etc.
     });
 });
