@@ -6,6 +6,7 @@
  * While this structure can be READ at startup to create UI etc,
  * the official source of truth once the map is running would be MAP.getStyle().layers
  * which would reflect the actual state of the layers at that time: changed visibility, style & filters, ...
+ * and it's the LayerPickerControl which will change the visibility of these layers (that's why they're all "none" right now)
  */
 
 export const VECTILES_BASE_URL = "http://ec2-54-202-248-255.us-west-2.compute.amazonaws.com/ohm/tiles/";
@@ -96,12 +97,13 @@ export const GLMAP_STYLE = {
         "fill-outline-color": "rgb(0, 0, 0)"
       },
       "layout" : {
-        "visibility": "visible",
+        "visibility": "none",
       },
       "filter": [ 'all', [ "<=", "START", "9999/12/31" ], [ ">", "END", "9999/12/31" ] ],  // filter: start date and end date clauses, drop in a year to see what had any presence during that year
     },
+    /*
     {
-      "id": "state-boundaries-modern-fill",
+      "id": "state-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
       "source": "states-modern",
       "source-layer": "states",
       "type": "fill",
@@ -112,9 +114,10 @@ export const GLMAP_STYLE = {
         "fill-outline-color": "rgb(0, 0, 0)",
       },
       "layout" : {
-        "visibility": "visible",
+        "visibility": "none",
       },
     },
+    */
     {
       "id": "state-boundaries-modern-line",
       "source": "states-modern",
@@ -126,11 +129,12 @@ export const GLMAP_STYLE = {
         "line-width": 4,
       },
       "layout" : {
-        "visibility": "visible",
+        "visibility": "none",
       },
     },
+    /*
     {
-      "id": "county-boundaries-modern-fill",
+      "id": "county-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
       "source": "counties-modern",
       "source-layer": "counties",
       "type": "fill",
@@ -141,9 +145,10 @@ export const GLMAP_STYLE = {
         "fill-outline-color": "rgb(0, 0, 0)",
       },
       "layout" : {
-        "visibility": "visible",
+        "visibility": "none",
       },
     },
+    */
     {
       "id": "county-boundaries-modern-line",
       "source": "counties-modern",
@@ -155,7 +160,7 @@ export const GLMAP_STYLE = {
         "line-width": 2,
       },
       "layout" : {
-        "visibility": "visible",
+        "visibility": "none",
       },
     },
     {
@@ -171,4 +176,3 @@ export const GLMAP_STYLE = {
     }
   ]
 };
-

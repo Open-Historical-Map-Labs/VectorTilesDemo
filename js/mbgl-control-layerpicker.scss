@@ -1,0 +1,25 @@
+div.mapboxgl-ctrl.mbgl-control-layerpicker {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+
+    h2 {
+        font-size: 14px;
+        font-weight: bold;
+        margin: 0;
+    }
+    div.layergroup {
+        font-size: 11px;
+        margin-left: 1em;
+
+        label {
+            display: block;
+
+            cursor: pointer;
+
+            input[type="checkbox"] {
+                vertical-align: bottom;
+            }
+        }
+    }
+}

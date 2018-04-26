@@ -1,9 +1,8 @@
 require('./mbgl-control-timeslider.scss');
 
 export class TimeSliderControl {
-    constructor (options) {
-        if (! options) options = {};
-
+    constructor (options={}) {
+        // merge suppplied options with these defaults
         this.options = Object.assign({
             year: 1950,
             min: 1900,

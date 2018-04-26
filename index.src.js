@@ -2,6 +2,7 @@ import { STATES_MIN_ZOOM, COUNTIES_MIN_ZOOM } from './maplayers';
 import { GLMAP_STYLE } from './maplayers';
 
 import { TimeSliderControl } from './js/mbgl-control-timeslider';
+import { LayerPickerControl } from './js/mbgl-control-layerpicker';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 10;
@@ -33,6 +34,9 @@ $(document).ready(function () {
         maplayerids: [ 'state-boundaries-historical', 'county-boundaries-historical' ],
     });
     MAP.addControl(MAP.TIMESLIDER);
+
+    MAP.LAYERPICKER = new LayerPickerControl();
+    MAP.addControl(MAP.LAYERPICKER);
 
     //
     // mouse-hover for an informational popup
