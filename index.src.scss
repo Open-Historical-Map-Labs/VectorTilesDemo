@@ -11,12 +11,12 @@ body, html {
 }
 
 div.mapboxgl-popup-content {
-}
-div.mapboxgl-popup-content h1 {
-    font-size: 16px;
-    margin: 0;
-}
-div.mapboxgl-popup-content p {
-    font-size: 12px;
-    margin: 0;
+    h1 {
+        font-size: 16px;
+        margin: 0;
+    }
+    p {
+        font-size: 12px;
+        margin: 0;
+    }
 }

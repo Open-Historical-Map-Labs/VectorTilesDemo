@@ -4,7 +4,7 @@
 require('core-js/fn/object/assign');
 require('./mbgl-polyfill.js');
 
-require('./mbgl-control-timeslider.css');
+require('./mbgl-control-timeslider.scss');
 
 require('./index.src.html');
 require('./index.src.js');
