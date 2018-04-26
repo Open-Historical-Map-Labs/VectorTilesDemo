@@ -109,7 +109,15 @@ $(document).ready(function () {
             const pixelbox      = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
             const features      = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
 
-            MAP.INSPECTORPANEL.loadFeatures(features);
+            // unique-ify the features; MBGL is documented to return duplicates when features span tiles
+            const uniques = {};
+            features.forEach((feature) => {
+                uniques[feature.properties.IDNUM] = feature;
+            });
+            const showfeatures = Object.values(uniques);
+
+            // ready; hand off
+            MAP.INSPECTORPANEL.loadFeatures(showfeatures);
         },
     });
     MAP.addControl(MAP.CLICKS);
