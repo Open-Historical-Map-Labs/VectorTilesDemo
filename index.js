@@ -1,74 +1,111 @@
-var MAP;
-
-var MIN_ZOOM = 3;
-var MAX_ZOOM = 10;
-var START_ZOOM = 3;
-var START_CENTER = [-99.5, 37.9];
-
-function init() {
-    //
-    // basic map
-    //
-    MAP = new mapboxgl.Map({
-        container: "map",
-        style: GLMAP_STYLE,
-        zoom: START_ZOOM,
-        center: START_CENTER,
-        minZoom: MIN_ZOOM,
-        maxZoom: MAX_ZOOM,
-    });
-
-    MAP.addControl(new mapboxgl.NavigationControl());
-
-    MAP.TIMESLIDER = new TimeSliderControl({
-        year: 1790,
-        min: 1790,
-        max: 2000,
-        step: 10,
-        maplayerids: [ 'state-boundaries-historical', 'county-boundaries-historical' ],
-    });
-    MAP.addControl(MAP.TIMESLIDER);
-
-    //
-    // mouse-hover for an informational popup
-    // the mousemove handler is set up after the load has fired, to avoid annoying consol eerrors when the mouse is moved while it's still loading
-    //
-    MAP.POPUP = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false
-    });
-
-    MAP.on('load', function () {
-        MAP.on('mousemove', function (event) {
-            var tooltip_layer_ids = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
-            var pxbuffer = 1;
-            var canvas   = MAP.getCanvasContainer();
-            var rect     = canvas.getBoundingClientRect();
-            var glpoint  = new mapboxgl.Point(event.originalEvent.clientX - rect.left - canvas.clientLeft, event.originalEvent.clientY - rect.top - canvas.clientTop);
-            var pixelbox = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
-            var features = MAP.queryRenderedFeatures(pixelbox, { layers: tooltip_layer_ids });
-
-            if (features.length) {
-                // open a popup
-                var attribs = features[0].properties;
-                console.log(attribs);
-
-                var description = "";
-                description += '<h1>' + attribs.NAME + '</h1>';
-                description += '<p>' + attribs.START + ' to ' + attribs.END + '</p>';
-                description += '<p>' + attribs.CHANGE + '</p>';
-                MAP.POPUP.setLngLat(event.lngLat).setHTML(description).addTo(MAP);
-            }
-            else {
-                // remove the popup
-                MAP.POPUP.remove();
-            }
-        });
-    });
-
-    //
-    // startup and initial state, once the GL Map has loaded
-    //
-    MAP.on('load', function () {
-    });
-}
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// identity function for calling harmony imports with the correct context
+/******/ 	__webpack_require__.i = function(value) { return value; };
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__.p + "index.html";
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// webpack entry point
+// list JS files to include, CSS and SASS files to include, HTML templates to have [hash] replacement, etc.
+
+__webpack_require__(0);
+__webpack_require__(1);
+
+/*
+// polyfills
+require('core-js/fn/array/includes');
+
+// bundle libraries
+require('./js/leaflet-control-basemapbar.js');
+require('./js/leaflet-control-basemapbar.css');
+require('./js/leaflet-control-zoombar.js');
+require('./js/leaflet-control-zoombar.css');
+require('./js/leaflet-control-credits.js');
+require('./js/leaflet-control-credits.css');
+require('./js/leaflet-control-legend.js');
+require('./js/leaflet-control-legend.css');
+*/
+
+/***/ })
+/******/ ]);
+//# sourceMappingURL=index.js.map
