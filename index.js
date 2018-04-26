@@ -63,24 +63,24 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 19);
+/******/ 	return __webpack_require__(__webpack_require__.s = 27);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports) {
 
-// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
-var global = module.exports = typeof window != 'undefined' && window.Math == Math
-  ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
-if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
+var core = module.exports = {version: '2.4.0'};
+if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
 
 /***/ }),
 /* 1 */
 /***/ (function(module, exports) {
 
-var core = module.exports = {version: '2.4.0'};
-if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
+// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+var global = module.exports = typeof window != 'undefined' && window.Math == Math
+  ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
+if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
 
 /***/ }),
 /* 2 */
@@ -113,6 +113,17 @@ module.exports = function(it){
 
 /***/ }),
 /* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// to indexed object, toObject with fallback for non-array-like ES3 strings
+var IObject = __webpack_require__(10)
+  , defined = __webpack_require__(6);
+module.exports = function(it){
+  return IObject(defined(it));
+};
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports) {
 
 // 7.2.1 RequireObjectCoercible(argument)
@@ -122,7 +133,55 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 6 */
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global    = __webpack_require__(1)
+  , core      = __webpack_require__(0)
+  , hide      = __webpack_require__(9)
+  , redefine  = __webpack_require__(42)
+  , ctx       = __webpack_require__(32)
+  , PROTOTYPE = 'prototype';
+
+var $export = function(type, name, source){
+  var IS_FORCED = type & $export.F
+    , IS_GLOBAL = type & $export.G
+    , IS_STATIC = type & $export.S
+    , IS_PROTO  = type & $export.P
+    , IS_BIND   = type & $export.B
+    , target    = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE]
+    , exports   = IS_GLOBAL ? core : core[name] || (core[name] = {})
+    , expProto  = exports[PROTOTYPE] || (exports[PROTOTYPE] = {})
+    , key, own, out, exp;
+  if(IS_GLOBAL)source = name;
+  for(key in source){
+    // contains in native
+    own = !IS_FORCED && target && target[key] !== undefined;
+    // export native or passed
+    out = (own ? target : source)[key];
+    // bind timers to global for call from export context
+    exp = IS_BIND && own ? ctx(out, global) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
+    // extend global
+    if(target)redefine(target, key, out, type & $export.U);
+    // export
+    if(exports[key] != out)hide(exports, key, exp);
+    if(IS_PROTO && expProto[key] != out)expProto[key] = out;
+  }
+};
+global.core = core;
+// type bitmap
+$export.F = 1;   // forced
+$export.G = 2;   // global
+$export.S = 4;   // static
+$export.P = 8;   // proto
+$export.B = 16;  // bind
+$export.W = 32;  // wrap
+$export.U = 64;  // safe
+$export.R = 128; // real proto method for `library` 
+module.exports = $export;
+
+/***/ }),
+/* 8 */
 /***/ (function(module, exports) {
 
 var hasOwnProperty = {}.hasOwnProperty;
@@ -131,11 +190,11 @@ module.exports = function(it, key){
 };
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var dP         = __webpack_require__(30)
-  , createDesc = __webpack_require__(35);
+var dP         = __webpack_require__(37)
+  , createDesc = __webpack_require__(41);
 module.exports = __webpack_require__(2) ? function(object, key, value){
   return dP.f(object, key, createDesc(1, value));
 } : function(object, key, value){
@@ -144,17 +203,35 @@ module.exports = __webpack_require__(2) ? function(object, key, value){
 };
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // fallback for non-array-like ES3 and non-enumerable old V8 strings
-var cof = __webpack_require__(23);
+var cof = __webpack_require__(31);
 module.exports = Object('z').propertyIsEnumerable(0) ? Object : function(it){
   return cof(it) == 'String' ? it.split('') : Object(it);
 };
 
 /***/ }),
-/* 9 */
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// 19.1.2.14 / 15.2.3.14 Object.keys(O)
+var $keys       = __webpack_require__(39)
+  , enumBugKeys = __webpack_require__(34);
+
+module.exports = Object.keys || function keys(O){
+  return $keys(O, enumBugKeys);
+};
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports) {
+
+exports.f = {}.propertyIsEnumerable;
+
+/***/ }),
+/* 13 */
 /***/ (function(module, exports) {
 
 // 7.1.4 ToInteger
@@ -165,18 +242,7 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// to indexed object, toObject with fallback for non-array-like ES3 strings
-var IObject = __webpack_require__(8)
-  , defined = __webpack_require__(5);
-module.exports = function(it){
-  return IObject(defined(it));
-};
-
-/***/ }),
-/* 11 */
+/* 14 */
 /***/ (function(module, exports) {
 
 var id = 0
@@ -186,15 +252,23 @@ module.exports = function(key){
 };
 
 /***/ }),
-/* 12 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _maplayers = __webpack_require__(18);
+var _maplayers = __webpack_require__(26);
 
-var _mbglControlTimeslider = __webpack_require__(17);
+var _mbglControlTimeslider = __webpack_require__(25);
+
+var _mbglControlLayerpicker = __webpack_require__(22);
+
+var _mbglControlMousehovers = __webpack_require__(24);
+
+var _mbglControlMouseclicks = __webpack_require__(23);
+
+var _mbglControlInspectorpanel = __webpack_require__(21);
 
 var MIN_ZOOM = 3;
 var MAX_ZOOM = 10;
@@ -227,42 +301,83 @@ $(document).ready(function () {
     });
     MAP.addControl(MAP.TIMESLIDER);
 
-    //
-    // mouse-hover for an informational popup
-    // the mousemove handler is set up after the load has fired, to avoid annoying console errors when the mouse is moved while it's still loading
-    // the technique used below creates a 3px buffer around the point, and queries that
-    // for polygon data this isn't necessary, but we'll likely work in point and line data some day and this works for those as well
-    //
-    MAP.POPUP = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false
-    });
+    MAP.LAYERPICKER = new _mbglControlLayerpicker.LayerPickerControl();
+    MAP.addControl(MAP.LAYERPICKER);
 
-    MAP.on('load', function () {
-        MAP.on('mousemove', function (event) {
-            var tooltip_layer_ids = ['state-boundaries-historical', 'county-boundaries-historical'];
-            var pxbuffer = 3;
+    MAP.INSPECTORPANEL = new _mbglControlInspectorpanel.InspectorPanelControl({
+        templates: {
+            'states-historical': function statesHistorical(feature) {
+                return '\n                    State: ' + feature.properties.NAME + '<br/>\n                    Dates: ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '\n                    <div>' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
+            },
+            'counties-historical': function countiesHistorical(feature) {
+                return '\n                    County: ' + feature.properties.NAME + '<br/>\n                    Dates: ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '\n                    <div>' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
+            }
+        }
+    });
+    MAP.addControl(MAP.INSPECTORPANEL);
+
+    MAP.HOVERS = new _mbglControlMousehovers.MapHoversControl({
+        layers: {
+            'state-boundaries-historical': {
+                enter: function enter(mouseevent) {
+                    // there's a highlight layer: same data as state boundaries, but alternative style to be shown in conjunction with the visible one
+                    var featureid = mouseevent.features[0].properties.IDNUM;
+                    var tooltip = mouseevent.features[0].properties.NAME;
+                    MAP.setFilter('state-boundaries-historical-hover', ["==", "IDNUM", featureid]);
+                    document.getElementById('map').title = tooltip;
+                    MAP.getCanvas().style.cursor = 'crosshair';
+                },
+                leave: function leave(mouseevent) {
+                    MAP.setFilter('state-boundaries-historical-hover', ["==", "IDNUM", -1]);
+                    document.getElementById('map').title = "";
+                    MAP.getCanvas().style.cursor = 'inherit';
+                }
+            },
+            'county-boundaries-historical': {
+                enter: function enter(mouseevent) {
+                    // there's a highlight layer: same data as county boundaries, but alternative style to be shown in conjunction with the visible one
+                    var featureid = mouseevent.features[0].properties.IDNUM;
+                    var tooltip = mouseevent.features[0].properties.NAME;
+                    MAP.setFilter('county-boundaries-historical-hover', ["==", "IDNUM", featureid]);
+                    document.getElementById('map').title = tooltip;
+                    MAP.getCanvas().style.cursor = 'crosshair';
+                },
+                leave: function leave(mouseevent) {
+                    MAP.setFilter('county-boundaries-historical-hover', ["==", "IDNUM", -1]);
+                    document.getElementById('map').title = "";
+                    MAP.getCanvas().style.cursor = 'inherit';
+                }
+            }
+        }
+    });
+    MAP.addControl(MAP.HOVERS);
+
+    MAP.CLICKS = new _mbglControlMouseclicks.MapClicksControl({
+        click: function click(clickevent) {
+            // this version queries a box around the click, which is overkill for our use case of all polygons
+            // but some day we'll add points and lines, then increasing pxbuffer to 3 will make it easier to click those
+            var clicklayers = ['state-boundaries-historical', 'county-boundaries-historical'];
+            var pxbuffer = 1;
             var canvas = MAP.getCanvasContainer();
             var rect = canvas.getBoundingClientRect();
-            var glpoint = new mapboxgl.Point(event.originalEvent.clientX - rect.left - canvas.clientLeft, event.originalEvent.clientY - rect.top - canvas.clientTop);
+            var glpoint = new mapboxgl.Point(clickevent.originalEvent.clientX - rect.left - canvas.clientLeft, clickevent.originalEvent.clientY - rect.top - canvas.clientTop);
             var pixelbox = [[glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer]];
-            var features = MAP.queryRenderedFeatures(pixelbox, { layers: tooltip_layer_ids });
+            var features = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
 
-            if (features.length) {
-                // open a popup
-                var attribs = features[0].properties;
-                // console.log(attribs);
+            // unique-ify the features; MBGL is documented to return duplicates when features span tiles
+            var uniques = {};
+            features.forEach(function (feature) {
+                uniques[feature.properties.IDNUM] = feature;
+            });
+            var showfeatures = Object.values(uniques);
 
-                var description = '\n                    <h1>' + attribs.NAME + '</h1>\n                    <p>' + attribs.START + ' to ' + attribs.END + '</p>\n                    <p>' + attribs.CHANGE + '</p>\n                ';
-                MAP.POPUP.setLngLat(event.lngLat).setHTML(description).addTo(MAP);
-            } else {
-                // remove the popup
-                MAP.POPUP.remove();
-            }
-        });
+            // ready; hand off
+            MAP.INSPECTORPANEL.loadFeatures(showfeatures);
+        }
     });
+    MAP.addControl(MAP.CLICKS);
 
-    //
+    //  
     // startup and initial state, once the GL Map has loaded
     //
     MAP.on('load', function () {
@@ -272,7 +387,7 @@ $(document).ready(function () {
 });
 
 /***/ }),
-/* 13 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -332,26 +447,33 @@ mapboxgl.Map.prototype.toggleLayersByGroup = function (sourcename, layername, vi
 };
 
 /***/ }),
-/* 14 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(43);
-module.exports = __webpack_require__(1).Object.assign;
+__webpack_require__(49);
+module.exports = __webpack_require__(0).Object.assign;
 
 /***/ }),
-/* 15 */
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(50);
+module.exports = __webpack_require__(0).Object.entries;
+
+/***/ }),
+/* 19 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 16 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__.p + "index.html";
 
 /***/ }),
-/* 17 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -365,14 +487,460 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-__webpack_require__(44);
+/*
+ * A wrapper for generating "what's where you clicked" information, from a set of Feature objects fed into it
+ * Pass to loadFeatures() a set of map Features (the type you'd get from a click or hover event) to display them in a listing.
+ * The HTML generated for each feature, depends on its data source.
+ * 
+ * Params:
+ * templates -- an object mapping a layer source name onto a callback, e.g. state-boundaries => function (feature) ...
+ *              This effectively means that all layers from the same source, will get the same template function (after all, they have the same attributes)
+ *              The function is passed the Feature, and should return HTML to be inserted into the listing.
+ * 
+ * Example:
+ * panel = new InspectorPanelControl({
+ *     templates: {
+ *         'states': function (feature) {
+ *         },
+ *         'counties': function (feature) {
+ *         },
+ *     }
+ * });
+ * panel.loadFeatures([ ... ... ... ]);
+ */
+
+__webpack_require__(51);
+
+var InspectorPanelControl = exports.InspectorPanelControl = function () {
+    function InspectorPanelControl() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        _classCallCheck(this, InspectorPanelControl);
+
+        // merge suppplied options with these defaults
+        this.options = Object.assign({
+            templates: {} // source-ID => function
+        }, options);
+    }
+
+    _createClass(InspectorPanelControl, [{
+        key: "onAdd",
+        value: function onAdd(map) {
+            this._map = map;
+
+            this._container = document.createElement("div");
+            this._container.className = "mapboxgl-ctrl mbgl-control-inspectorpanel mbgl-control-inspectorpanel-closed";
+
+            var bigtitle = document.createElement("h2");
+            bigtitle.innerHTML = "What's Here?";
+            this._container.appendChild(bigtitle);
+
+            this._listing = document.createElement("DIV");
+            this._listing.className = 'mbgl-control-inspectorpanel-listing';
+            this._container.appendChild(this._listing);
+
+            // done
+            return this._container;
+        }
+    }, {
+        key: "onRemove",
+        value: function onRemove() {
+            this._container.parentNode.removeChild(this._container);
+            this._map = undefined;
+        }
+    }, {
+        key: "getDefaultPosition",
+        value: function getDefaultPosition() {
+            return 'bottom-right';
+        }
+
+        // hand this control a set of new features to show their info
+        // null or an empty list, will hide the panel
+
+    }, {
+        key: "loadFeatures",
+        value: function loadFeatures(features) {
+            var _this = this;
+
+            //console.log([ 'loadFeatures()', features ]);
+
+            // empty the listing, without orphaning event handlers et al
+            var range = document.createRange();
+            range.selectNodeContents(this._listing);
+            range.deleteContents();
+
+            // got nothing?: close the window and bail
+            if (!features || !features.length) {
+                this._container.classList.add('mbgl-control-inspectorpanel-closed');
+                return;
+            }
+
+            // guess we're showing stuff
+            this._container.classList.remove('mbgl-control-inspectorpanel-closed');
+            features.forEach(function (feature) {
+                var thisitem = document.createElement("DIV");
+                thisitem.className = 'mbgl-control-inspectorpanel-item';
+                // console.log(feature);
+
+                var sourceid = feature.layer.source;
+                var htmlmaker = _this.options.templates[sourceid];
+                if (!htmlmaker) throw new Error("InspectorPanelControl for a feature with an unexpected source: " + sourceid);
+                thisitem.innerHTML = htmlmaker(feature);
+
+                _this._listing.appendChild(thisitem);
+            });
+        }
+    }]);
+
+    return InspectorPanelControl;
+}();
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+__webpack_require__(52);
+
+var LAYER_GROUPS = [{
+    'title': "Historical Boundaries",
+    layers: [{
+        'title': "States",
+        'layerids': ['state-boundaries-historical'],
+        'visible': true
+    }, {
+        'title': "Counties",
+        'layerids': ['county-boundaries-historical'],
+        'visible': false
+    }]
+}, {
+    'title': "Modern Boundaries (2018)",
+    layers: [{
+        'title': "States",
+        'layerids': ['state-boundaries-modern-line'],
+        'visible': false
+    }, {
+        'title': "Counties",
+        'layerids': ['county-boundaries-modern-line'],
+        'visible': false
+    }]
+}];
+
+var LayerPickerControl = exports.LayerPickerControl = function () {
+    function LayerPickerControl() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        _classCallCheck(this, LayerPickerControl);
+
+        // merge suppplied options with these defaults
+        this.options = Object.assign({
+            layergroups: LAYER_GROUPS
+        }, options);
+    }
+
+    _createClass(LayerPickerControl, [{
+        key: 'onAdd',
+        value: function onAdd(map) {
+            var _this = this;
+
+            this._map = map;
+
+            this._container = document.createElement("div");
+            this._container.className = "mapboxgl-ctrl mbgl-control-layerpicker";
+
+            // lay out the layer groups, which are a header/title and a list of labels-and-checkboxes per layer within the group
+            LAYER_GROUPS.forEach(function (layergroup) {
+                var section = document.createElement('div');
+                section.className = 'layergroup';
+                _this._container.appendChild(section);
+
+                var bigtitle = document.createElement('h2');
+                bigtitle.innerHTML = layergroup.title;
+                section.appendChild(bigtitle);
+
+                layergroup.layers.forEach(function (layer) {
+                    var label = document.createElement('label');
+                    label.innerHTML = layer.title;
+
+                    var checkbox = document.createElement('input');
+                    checkbox.type = "checkbox";
+                    checkbox.checked = layer.visible;
+                    checkbox.value = layer.layerids.join(',');
+                    label.prepend(checkbox);
+
+                    checkbox.addEventListener('change', function (event) {
+                        var layerids = event.target.value.split(','); // checkboxes have a value= of the layer-IDs comma-joined
+                        var visible = event.target.checked;
+                        _this.toggleLayer(layerids, visible);
+                    });
+
+                    _this._map.on('load', function () {
+                        // when the map comes ready, apply this checkbox's state as if it had just changed into its checked/unchecked state, so as to make the layers match the checkboxes
+                        checkbox.dispatchEvent(new Event('change'));
+                    });
+
+                    section.appendChild(label);
+                });
+            });
+
+            // done
+            return this._container;
+        }
+    }, {
+        key: 'onRemove',
+        value: function onRemove() {
+            this._container.parentNode.removeChild(this._container);
+            this._map = undefined;
+        }
+    }, {
+        key: 'getDefaultPosition',
+        value: function getDefaultPosition() {
+            return 'top-left';
+        }
+    }, {
+        key: 'toggleLayer',
+        value: function toggleLayer(layerids, visible) {
+            var _this2 = this;
+
+            var display = visible ? 'visible' : 'none';
+
+            this._map.getStyle().layers.filter(function (maplayer) {
+                return layerids.indexOf(maplayer.id) >= 0;
+            }).forEach(function (maplayer) {
+                _this2._map.setLayoutProperty(maplayer.id, 'visibility', display);
+            });
+        }
+    }]);
+
+    return LayerPickerControl;
+}();
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/*
+ * Map click control for MBGL
+ *
+ * Params:
+ * layers -- an object mapping layer-ID onto a callback when a feature in that layer is clicked
+ * Example:
+ *     new MapClicksControl({
+ *         layers: {
+ *             'state-boundaries-historical': function (clickevent) {
+ *             },
+ *             'county-boundaries-historical': function (clickevent) {
+ *             },
+ *         }
+ * OR
+ * click -- a callback when the map is clicked
+ *     new MapClicksControl({
+ *         click: function (clickevent) {
+ *         },
+ *     });
+ */
+
+var MapClicksControl = exports.MapClicksControl = function () {
+    function MapClicksControl() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        _classCallCheck(this, MapClicksControl);
+
+        // merge suppplied options with these defaults
+        this.options = Object.assign({
+            layers: {} /// layerid => clickevent callback
+        }, options);
+    }
+
+    _createClass(MapClicksControl, [{
+        key: "onAdd",
+        value: function onAdd(map) {
+            var _this = this;
+
+            this._map = map;
+
+            // when the map comes ready, attach these events
+            this._map.on('load', function () {
+                if (_this.options.layers) {
+                    Object.entries(_this.options.layers).forEach(function (_ref) {
+                        var _ref2 = _slicedToArray(_ref, 2),
+                            layerid = _ref2[0],
+                            callback = _ref2[1];
+
+                        _this._map.on("click", layerid, callback);
+                    });
+                }
+                if (_this.options.click) {
+                    _this._map.on("click", _this.options.click);
+                }
+            });
+
+            // return some dummy container we won't use
+            this._container = document.createElement('span');
+            return this._container;
+        }
+    }, {
+        key: "onRemove",
+        value: function onRemove() {
+            var _this2 = this;
+
+            // detach the event handlers
+            if (this.options.layers) {
+                Object.entries(this.options.layers).forEach(function (_ref3) {
+                    var _ref4 = _slicedToArray(_ref3, 2),
+                        layerid = _ref4[0],
+                        callback = _ref4[1];
+
+                    _this2._map.off("click", layerid, callback);
+                });
+            }
+            if (this.options.click) {
+                this._map.off("click", this.options.click);
+            }
+
+            this._container.parentNode.removeChild(this._container);
+            this._map = undefined;
+        }
+    }, {
+        key: "onMouseClick",
+        value: function onMouseClick(event) {
+            console.log(['onMouseClick()', event]);
+        }
+    }]);
+
+    return MapClicksControl;
+}();
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var MapHoversControl = exports.MapHoversControl = function () {
+    function MapHoversControl() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+        _classCallCheck(this, MapHoversControl);
+
+        // merge suppplied options with these defaults
+        this.options = Object.assign({
+            layers: {} /// layerid => mouseevent callback
+        }, options);
+    }
+
+    _createClass(MapHoversControl, [{
+        key: "onAdd",
+        value: function onAdd(map) {
+            var _this = this;
+
+            this._map = map;
+
+            // when the map comes ready, attach the given events to the given layers
+            this._map.on('load', function () {
+                Object.entries(_this.options.layers).forEach(function (_ref) {
+                    var _ref2 = _slicedToArray(_ref, 2),
+                        layerid = _ref2[0],
+                        callbacks = _ref2[1];
+
+                    if (callbacks.enter) {
+                        _this._map.on("mousemove", layerid, callbacks.enter);
+                    }
+                    if (callbacks.leave) {
+                        _this._map.on("mouseleave", layerid, callbacks.leave);
+                    }
+                });
+            });
+
+            // return some dummy container we won't use
+            this._container = document.createElement('span');
+            return this._container;
+        }
+    }, {
+        key: "onRemove",
+        value: function onRemove() {
+            var _this2 = this;
+
+            // detach events
+            Object.entries(this.options.layers).forEach(function (_ref3) {
+                var _ref4 = _slicedToArray(_ref3, 2),
+                    layerid = _ref4[0],
+                    callbacks = _ref4[1];
+
+                if (callbacks.enter) {
+                    _this2._map.off("mousemove", layerid, callbacks.enter);
+                }
+                if (callbacks.leave) {
+                    _this2._map.off("mouseleave", layerid, callbacks.leave);
+                }
+            });
+
+            this._container.parentNode.removeChild(this._container);
+            this._map = undefined;
+        }
+    }]);
+
+    return MapHoversControl;
+}();
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+__webpack_require__(53);
 
 var TimeSliderControl = exports.TimeSliderControl = function () {
-    function TimeSliderControl(options) {
+    function TimeSliderControl() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
         _classCallCheck(this, TimeSliderControl);
 
-        if (!options) options = {};
-
+        // merge suppplied options with these defaults
         this.options = Object.assign({
             year: 1950,
             min: 1900,
@@ -462,7 +1030,7 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
 }();
 
 /***/ }),
-/* 18 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -479,6 +1047,7 @@ Object.defineProperty(exports, "__esModule", {
  * While this structure can be READ at startup to create UI etc,
  * the official source of truth once the map is running would be MAP.getStyle().layers
  * which would reflect the actual state of the layers at that time: changed visibility, style & filters, ...
+ * and it's the LayerPickerControl which will change the visibility of these layers (that's why they're all "none" right now)
  */
 
 var VECTILES_BASE_URL = exports.VECTILES_BASE_URL = "http://ec2-54-202-248-255.us-west-2.compute.amazonaws.com/ohm/tiles/";
@@ -538,6 +1107,20 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     },
     "filter": ['all', ["<=", "START", "9999/12/31"], [">", "END", "9999/12/31"]] // filter: start date and end date clauses, drop in a year to see what had any presence during that year
   }, {
+    "id": "state-boundaries-historical-hover",
+    "source": "states-historical",
+    "source-layer": "states",
+    "type": "fill",
+    "minzoom": STATES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "white",
+      "fill-opacity": 0.5
+    },
+    "layout": {
+      "visibility": "visible"
+    },
+    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
+  }, {
     "id": "county-boundaries-historical",
     "source": "counties-historical",
     "source-layer": "counties",
@@ -548,11 +1131,27 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
       "fill-outline-color": "rgb(0, 0, 0)"
     },
     "layout": {
-      "visibility": "visible"
+      "visibility": "none"
     },
     "filter": ['all', ["<=", "START", "9999/12/31"], [">", "END", "9999/12/31"]] // filter: start date and end date clauses, drop in a year to see what had any presence during that year
   }, {
-    "id": "state-boundaries-modern-fill",
+    "id": "county-boundaries-historical-hover",
+    "source": "counties-historical",
+    "source-layer": "counties",
+    "type": "fill",
+    "minzoom": COUNTIES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "white",
+      "fill-opacity": 0.5
+    },
+    "layout": {
+      "visibility": "visible"
+    },
+    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
+  },
+  /*
+  {
+    "id": "state-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
     "source": "states-modern",
     "source-layer": "states",
     "type": "fill",
@@ -560,12 +1159,14 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     "paint": {
       "fill-color": "white",
       "fill-opacity": 0,
-      "fill-outline-color": "rgb(0, 0, 0)"
+      "fill-outline-color": "rgb(0, 0, 0)",
     },
-    "layout": {
-      "visibility": "visible"
-    }
-  }, {
+    "layout" : {
+      "visibility": "none",
+    },
+  },
+  */
+  {
     "id": "state-boundaries-modern-line",
     "source": "states-modern",
     "source-layer": "states",
@@ -576,10 +1177,12 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
       "line-width": 4
     },
     "layout": {
-      "visibility": "visible"
+      "visibility": "none"
     }
-  }, {
-    "id": "county-boundaries-modern-fill",
+  },
+  /*
+  {
+    "id": "county-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
     "source": "counties-modern",
     "source-layer": "counties",
     "type": "fill",
@@ -587,12 +1190,14 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     "paint": {
       "fill-color": "white",
       "fill-opacity": 0,
-      "fill-outline-color": "rgb(0, 0, 0)"
+      "fill-outline-color": "rgb(0, 0, 0)",
     },
-    "layout": {
-      "visibility": "visible"
-    }
-  }, {
+    "layout" : {
+      "visibility": "none",
+    },
+  },
+  */
+  {
     "id": "county-boundaries-modern-line",
     "source": "counties-modern",
     "source-layer": "counties",
@@ -603,7 +1208,7 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
       "line-width": 2
     },
     "layout": {
-      "visibility": "visible"
+      "visibility": "none"
     }
   }, {
     "id": "basemap-labels",
@@ -619,7 +1224,7 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
 };
 
 /***/ }),
-/* 19 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -628,15 +1233,16 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
 // webpack entry point
 // list JS files to include, CSS and SASS files to include, HTML templates to have [hash] replacement, etc.
 
-__webpack_require__(14);
-__webpack_require__(13);
-
+__webpack_require__(17);
+__webpack_require__(18);
 __webpack_require__(16);
-__webpack_require__(12);
+
+__webpack_require__(20);
 __webpack_require__(15);
+__webpack_require__(19);
 
 /***/ }),
-/* 20 */
+/* 28 */
 /***/ (function(module, exports) {
 
 module.exports = function(it){
@@ -645,7 +1251,7 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 21 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(4);
@@ -655,14 +1261,14 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 22 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // false -> Array#indexOf
 // true  -> Array#includes
-var toIObject = __webpack_require__(10)
-  , toLength  = __webpack_require__(40)
-  , toIndex   = __webpack_require__(39);
+var toIObject = __webpack_require__(5)
+  , toLength  = __webpack_require__(46)
+  , toIndex   = __webpack_require__(45);
 module.exports = function(IS_INCLUDES){
   return function($this, el, fromIndex){
     var O      = toIObject($this)
@@ -681,7 +1287,7 @@ module.exports = function(IS_INCLUDES){
 };
 
 /***/ }),
-/* 23 */
+/* 31 */
 /***/ (function(module, exports) {
 
 var toString = {}.toString;
@@ -691,11 +1297,11 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 24 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // optional / simple context binding
-var aFunction = __webpack_require__(20);
+var aFunction = __webpack_require__(28);
 module.exports = function(fn, that, length){
   aFunction(fn);
   if(that === undefined)return fn;
@@ -716,11 +1322,11 @@ module.exports = function(fn, that, length){
 };
 
 /***/ }),
-/* 25 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(4)
-  , document = __webpack_require__(0).document
+  , document = __webpack_require__(1).document
   // in old IE typeof document.createElement is 'object'
   , is = isObject(document) && isObject(document.createElement);
 module.exports = function(it){
@@ -728,7 +1334,7 @@ module.exports = function(it){
 };
 
 /***/ }),
-/* 26 */
+/* 34 */
 /***/ (function(module, exports) {
 
 // IE 8- don't enum bug keys
@@ -737,73 +1343,25 @@ module.exports = (
 ).split(',');
 
 /***/ }),
-/* 27 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var global    = __webpack_require__(0)
-  , core      = __webpack_require__(1)
-  , hide      = __webpack_require__(7)
-  , redefine  = __webpack_require__(36)
-  , ctx       = __webpack_require__(24)
-  , PROTOTYPE = 'prototype';
-
-var $export = function(type, name, source){
-  var IS_FORCED = type & $export.F
-    , IS_GLOBAL = type & $export.G
-    , IS_STATIC = type & $export.S
-    , IS_PROTO  = type & $export.P
-    , IS_BIND   = type & $export.B
-    , target    = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE]
-    , exports   = IS_GLOBAL ? core : core[name] || (core[name] = {})
-    , expProto  = exports[PROTOTYPE] || (exports[PROTOTYPE] = {})
-    , key, own, out, exp;
-  if(IS_GLOBAL)source = name;
-  for(key in source){
-    // contains in native
-    own = !IS_FORCED && target && target[key] !== undefined;
-    // export native or passed
-    out = (own ? target : source)[key];
-    // bind timers to global for call from export context
-    exp = IS_BIND && own ? ctx(out, global) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
-    // extend global
-    if(target)redefine(target, key, out, type & $export.U);
-    // export
-    if(exports[key] != out)hide(exports, key, exp);
-    if(IS_PROTO && expProto[key] != out)expProto[key] = out;
-  }
-};
-global.core = core;
-// type bitmap
-$export.F = 1;   // forced
-$export.G = 2;   // global
-$export.S = 4;   // static
-$export.P = 8;   // proto
-$export.B = 16;  // bind
-$export.W = 32;  // wrap
-$export.U = 64;  // safe
-$export.R = 128; // real proto method for `library` 
-module.exports = $export;
-
-/***/ }),
-/* 28 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = !__webpack_require__(2) && !__webpack_require__(3)(function(){
-  return Object.defineProperty(__webpack_require__(25)('div'), 'a', {get: function(){ return 7; }}).a != 7;
+  return Object.defineProperty(__webpack_require__(33)('div'), 'a', {get: function(){ return 7; }}).a != 7;
 });
 
 /***/ }),
-/* 29 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
-var getKeys  = __webpack_require__(33)
-  , gOPS     = __webpack_require__(31)
-  , pIE      = __webpack_require__(34)
-  , toObject = __webpack_require__(41)
-  , IObject  = __webpack_require__(8)
+var getKeys  = __webpack_require__(11)
+  , gOPS     = __webpack_require__(38)
+  , pIE      = __webpack_require__(12)
+  , toObject = __webpack_require__(47)
+  , IObject  = __webpack_require__(10)
   , $assign  = Object.assign;
 
 // should work with symbols and should have deterministic property order (V8 bug)
@@ -832,12 +1390,12 @@ module.exports = !$assign || __webpack_require__(3)(function(){
 } : $assign;
 
 /***/ }),
-/* 30 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var anObject       = __webpack_require__(21)
-  , IE8_DOM_DEFINE = __webpack_require__(28)
-  , toPrimitive    = __webpack_require__(42)
+var anObject       = __webpack_require__(29)
+  , IE8_DOM_DEFINE = __webpack_require__(35)
+  , toPrimitive    = __webpack_require__(48)
   , dP             = Object.defineProperty;
 
 exports.f = __webpack_require__(2) ? Object.defineProperty : function defineProperty(O, P, Attributes){
@@ -853,19 +1411,19 @@ exports.f = __webpack_require__(2) ? Object.defineProperty : function defineProp
 };
 
 /***/ }),
-/* 31 */
+/* 38 */
 /***/ (function(module, exports) {
 
 exports.f = Object.getOwnPropertySymbols;
 
 /***/ }),
-/* 32 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var has          = __webpack_require__(6)
-  , toIObject    = __webpack_require__(10)
-  , arrayIndexOf = __webpack_require__(22)(false)
-  , IE_PROTO     = __webpack_require__(37)('IE_PROTO');
+var has          = __webpack_require__(8)
+  , toIObject    = __webpack_require__(5)
+  , arrayIndexOf = __webpack_require__(30)(false)
+  , IE_PROTO     = __webpack_require__(43)('IE_PROTO');
 
 module.exports = function(object, names){
   var O      = toIObject(object)
@@ -881,25 +1439,28 @@ module.exports = function(object, names){
 };
 
 /***/ }),
-/* 33 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
-// 19.1.2.14 / 15.2.3.14 Object.keys(O)
-var $keys       = __webpack_require__(32)
-  , enumBugKeys = __webpack_require__(26);
-
-module.exports = Object.keys || function keys(O){
-  return $keys(O, enumBugKeys);
+var getKeys   = __webpack_require__(11)
+  , toIObject = __webpack_require__(5)
+  , isEnum    = __webpack_require__(12).f;
+module.exports = function(isEntries){
+  return function(it){
+    var O      = toIObject(it)
+      , keys   = getKeys(O)
+      , length = keys.length
+      , i      = 0
+      , result = []
+      , key;
+    while(length > i)if(isEnum.call(O, key = keys[i++])){
+      result.push(isEntries ? [key, O[key]] : O[key]);
+    } return result;
+  };
 };
 
 /***/ }),
-/* 34 */
-/***/ (function(module, exports) {
-
-exports.f = {}.propertyIsEnumerable;
-
-/***/ }),
-/* 35 */
+/* 41 */
 /***/ (function(module, exports) {
 
 module.exports = function(bitmap, value){
@@ -912,18 +1473,18 @@ module.exports = function(bitmap, value){
 };
 
 /***/ }),
-/* 36 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global    = __webpack_require__(0)
-  , hide      = __webpack_require__(7)
-  , has       = __webpack_require__(6)
-  , SRC       = __webpack_require__(11)('src')
+var global    = __webpack_require__(1)
+  , hide      = __webpack_require__(9)
+  , has       = __webpack_require__(8)
+  , SRC       = __webpack_require__(14)('src')
   , TO_STRING = 'toString'
   , $toString = Function[TO_STRING]
   , TPL       = ('' + $toString).split(TO_STRING);
 
-__webpack_require__(1).inspectSource = function(it){
+__webpack_require__(0).inspectSource = function(it){
   return $toString.call(it);
 };
 
@@ -949,20 +1510,20 @@ __webpack_require__(1).inspectSource = function(it){
 });
 
 /***/ }),
-/* 37 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var shared = __webpack_require__(38)('keys')
-  , uid    = __webpack_require__(11);
+var shared = __webpack_require__(44)('keys')
+  , uid    = __webpack_require__(14);
 module.exports = function(key){
   return shared[key] || (shared[key] = uid(key));
 };
 
 /***/ }),
-/* 38 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global = __webpack_require__(0)
+var global = __webpack_require__(1)
   , SHARED = '__core-js_shared__'
   , store  = global[SHARED] || (global[SHARED] = {});
 module.exports = function(key){
@@ -970,10 +1531,10 @@ module.exports = function(key){
 };
 
 /***/ }),
-/* 39 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toInteger = __webpack_require__(9)
+var toInteger = __webpack_require__(13)
   , max       = Math.max
   , min       = Math.min;
 module.exports = function(index, length){
@@ -982,28 +1543,28 @@ module.exports = function(index, length){
 };
 
 /***/ }),
-/* 40 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.15 ToLength
-var toInteger = __webpack_require__(9)
+var toInteger = __webpack_require__(13)
   , min       = Math.min;
 module.exports = function(it){
   return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 };
 
 /***/ }),
-/* 41 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.13 ToObject(argument)
-var defined = __webpack_require__(5);
+var defined = __webpack_require__(6);
 module.exports = function(it){
   return Object(defined(it));
 };
 
 /***/ }),
-/* 42 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.1 ToPrimitive(input [, PreferredType])
@@ -1020,16 +1581,42 @@ module.exports = function(it, S){
 };
 
 /***/ }),
-/* 43 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.3.1 Object.assign(target, source)
-var $export = __webpack_require__(27);
+var $export = __webpack_require__(7);
 
-$export($export.S + $export.F, 'Object', {assign: __webpack_require__(29)});
+$export($export.S + $export.F, 'Object', {assign: __webpack_require__(36)});
 
 /***/ }),
-/* 44 */
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// https://github.com/tc39/proposal-object-values-entries
+var $export  = __webpack_require__(7)
+  , $entries = __webpack_require__(40)(true);
+
+$export($export.S, 'Object', {
+  entries: function entries(it){
+    return $entries(it);
+  }
+});
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 53 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
