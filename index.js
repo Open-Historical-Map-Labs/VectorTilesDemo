@@ -946,7 +946,9 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
             min: 1900,
             max: 2000,
             step: 10,
-            maplayerids: []
+            maplayerids: [],
+            play_years: 10,
+            play_speed: 0.8
         }, options);
     }
 
@@ -957,11 +959,14 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
 
             this._map = map;
 
+            this._busyplaying = undefined;
+
             this._container = document.createElement("div");
             this._container.className = "mapboxgl-ctrl mbgl-control-timeslider";
 
             // slider element, with min/max/value from options
             this._slider = document.createElement('input');
+            this._slider.eitle = "Slide to select a year";
             this._slider.type = "range";
             this._slider.min = this.options.min;
             this._slider.max = this.options.max;
@@ -973,8 +978,52 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
                 _this.updateOnChange();
             });
 
-            // apply our action when the map first loads
+            // the selected-year readout
+            this._readout = document.createElement('div');
+            this._readout.className = 'mbgl-control-timeslider-readout';
+            this._container.appendChild(this._readout);
+
+            // the play/pause buttons
+            this._buttonwrapper = document.createElement('div');
+            this._buttonwrapper.className = 'mbgl-control-timeslider-buttons';
+            this._container.appendChild(this._buttonwrapper);
+
+            this._playbutton = document.createElement('button');
+            this._stopbutton = document.createElement('button');
+            this._nextbutton = document.createElement('button');
+            this._prevbutton = document.createElement('button');
+
+            this._playbutton.title = "Cycle through years automatically";
+            this._stopbutton.title = "Stop";
+            this._nextbutton.title = "Next Year";
+            this._prevbutton.title = "Previous Year";
+
+            this._playbutton.innerHTML = '<i class="glyphicons glyphicons-play-button"></i>';
+            this._stopbutton.innerHTML = '<i class="glyphicons glyphicons-pause"></i>';
+            this._nextbutton.innerHTML = '<i class="glyphicons glyphicons-chevron-right"></i>';
+            this._prevbutton.innerHTML = '<i class="glyphicons glyphicons-chevron-left"></i>';
+
+            this._playbutton.addEventListener('click', function () {
+                _this.clickPlay();
+            });
+            this._stopbutton.addEventListener('click', function () {
+                _this.clickStop();
+            });
+            this._nextbutton.addEventListener('click', function () {
+                _this.clickNext();
+            });
+            this._prevbutton.addEventListener('click', function () {
+                _this.clickPrev();
+            });
+
+            this._buttonwrapper.appendChild(this._prevbutton);
+            this._buttonwrapper.appendChild(this._playbutton);
+            this._buttonwrapper.appendChild(this._stopbutton);
+            this._buttonwrapper.appendChild(this._nextbutton);
+
+            // set up to apply our action when the map first loads
             this._map.on('load', function () {
+                _this.clickStop();
                 _this.updateOnChange();
             });
 
@@ -1005,6 +1054,8 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
 
             // console.log([ 'updateOnChange()', this._slider.value ]);
 
+            this._readout.innerHTML = this._slider.value;
+
             var year = this._slider.value;
             var startdate = parseInt(year) + '/01/01';
             var enddate = parseInt(year) + '/12/31';
@@ -1023,6 +1074,52 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
                 _this2._map.setFilter(maplayer.id, null);
                 _this2._map.setFilter(maplayer.id, ['all', ['<=', 'START', startdate], ['>', 'END', enddate]]);
             });
+        }
+    }, {
+        key: "clickPlay",
+        value: function clickPlay() {
+            var _this3 = this;
+
+            // toggle which button is visible
+            this._playbutton.style.display = 'none';
+            this._stopbutton.style.display = 'inline-block';
+
+            // cycle to the next year right now, then set the timer to keep doing so
+            this.clickNext();
+            this._busyplaying = setInterval(function () {
+                _this3.clickNext();
+            }, 1000 * this.options.play_speed);
+        }
+    }, {
+        key: "clickStop",
+        value: function clickStop() {
+            // toggle which button is visible
+            this._playbutton.style.display = 'inline-block';
+            this._stopbutton.style.display = 'none';
+
+            // stop the timer, then clear its existence
+            clearInterval(this._busyplaying);
+            this._busyplaying = undefined;
+        }
+    }, {
+        key: "clickNext",
+        value: function clickNext() {
+            // try to increment to the next year... or wrap around if that's past the end
+            var newvalue = parseInt(this._slider.value) + this.options.play_years;
+            if (newvalue > this._slider.max) {
+                newvalue = this._slider.min;
+            }
+            this.selectYear(newvalue);
+        }
+    }, {
+        key: "clickPrev",
+        value: function clickPrev() {
+            // try to decrement to the prior year... or wrap around if that's past the start
+            var newvalue = parseInt(this._slider.value) - this.options.play_years;
+            if (newvalue < this._slider.min) {
+                newvalue = this._slider.max;
+            }
+            this.selectYear(newvalue);
         }
     }]);
 
@@ -1050,7 +1147,7 @@ Object.defineProperty(exports, "__esModule", {
  * and it's the LayerPickerControl which will change the visibility of these layers (that's why they're all "none" right now)
  */
 
-var VECTILES_BASE_URL = exports.VECTILES_BASE_URL = "http://ec2-54-202-248-255.us-west-2.compute.amazonaws.com/ohm/tiles/";
+var VECTILES_BASE_URL = exports.VECTILES_BASE_URL = "https://ohm-demo.s3.amazonaws.com/tiles/";
 
 var STATES_MIN_ZOOM = exports.STATES_MIN_ZOOM = 3;
 var COUNTIES_MIN_ZOOM = exports.COUNTIES_MIN_ZOOM = 6;
