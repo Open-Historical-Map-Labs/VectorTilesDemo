@@ -296,7 +296,8 @@ $(document).ready(function () {
         year: 1790,
         min: 1790,
         max: 2000,
-        step: 10,
+        step: 1,
+        play_years: 5,
         maplayerids: ['state-boundaries-historical', 'county-boundaries-historical']
     });
     MAP.addControl(MAP.TIMESLIDER);
@@ -306,11 +307,17 @@ $(document).ready(function () {
 
     MAP.INSPECTORPANEL = new _mbglControlInspectorpanel.InspectorPanelControl({
         templates: {
+            'states-modern': function statesModern(feature) {
+                return '' + feature.properties.STATE_NAME;
+            },
+            'counties-modern': function countiesModern(feature) {
+                return feature.properties.NAME + ' County';
+            },
             'states-historical': function statesHistorical(feature) {
-                return '\n                    State: ' + feature.properties.NAME + '<br/>\n                    Dates: ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '\n                    <div>' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
+                return '\n                    <b>' + feature.properties.NAME + ', ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '</b>\n                    <br/>\n                    <div class="small">' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
             },
             'counties-historical': function countiesHistorical(feature) {
-                return '\n                    County: ' + feature.properties.NAME + '<br/>\n                    Dates: ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '\n                    <div>' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
+                return '\n                    <b>' + feature.properties.NAME + ', ' + feature.properties.START + ' - ' + (feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present') + '</b>\n                    <br/>\n                    <div class="small">' + feature.properties.CHANGE + ' ' + feature.properties.CITATION + '</div>\n                ';
             }
         }
     });
@@ -354,25 +361,53 @@ $(document).ready(function () {
 
     MAP.CLICKS = new _mbglControlMouseclicks.MapClicksControl({
         click: function click(clickevent) {
-            // this version queries a box around the click, which is overkill for our use case of all polygons
-            // but some day we'll add points and lines, then increasing pxbuffer to 3 will make it easier to click those
-            var clicklayers = ['state-boundaries-historical', 'county-boundaries-historical'];
-            var pxbuffer = 1;
-            var canvas = MAP.getCanvasContainer();
-            var rect = canvas.getBoundingClientRect();
-            var glpoint = new mapboxgl.Point(clickevent.originalEvent.clientX - rect.left - canvas.clientLeft, clickevent.originalEvent.clientY - rect.top - canvas.clientTop);
-            var pixelbox = [[glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer]];
-            var features = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
+            // one layer at a time, compile the history of thisd point location
+            // past state/territory status and modern state
+            // past county/township status and modern county
+            // the inspector panel expects a list of result sets, with a title and a list of results and a spec as to which layout template to use
+            //
+            // warning: a known "feature" of vector tile querying like this, is that it ONLY OPERATES ON WHAT'S VISIBLE IN THE VIEWPORT
+            // e.g. no counties until you've zoomed in
+            var collected_feature_groups = [{
+                title: "Present Day",
+                template: 'states-modern',
+                features: MAP.queryRenderedFeatures(clickevent.point, { layers: ['states-modern-clickable'] })
+            }, {
+                title: "Present County/Township",
+                template: 'counties-modern',
+                features: MAP.queryRenderedFeatures(clickevent.point, { layers: ['counties-modern-clickable'] })
+            }, {
+                title: "Historical State/Territory",
+                template: 'states-historical',
+                features: MAP.queryRenderedFeatures(clickevent.point, { layers: ['states-historical-clickable'] })
+            }, {
+                title: "Historical County/Township",
+                template: 'counties-historical',
+                features: MAP.queryRenderedFeatures(clickevent.point, { layers: ['counties-historical-clickable'] })
+            }];
 
-            // unique-ify the features; MBGL is documented to return duplicates when features span tiles
-            var uniques = {};
-            features.forEach(function (feature) {
-                uniques[feature.properties.IDNUM] = feature;
+            // unique-ify each set of features by its IDNUM; MBGL is documented to return duplicates when features span tiles
+            // the modern datasets lack an IDNUM which is okay: there will only be one feature (if any), with a key of undefined, so we still end up with 1 feature afterward (if any)
+            collected_feature_groups.forEach(function (featuregroup) {
+                var uniques = {};
+                featuregroup.features.forEach(function (feature) {
+                    uniques[feature.properties.IDNUM] = feature;
+                });
+                featuregroup.features = Object.values(uniques);
             });
-            var showfeatures = Object.values(uniques);
+            collected_feature_groups.forEach(function (featuregroup) {
+                switch (featuregroup.template) {
+                    case 'counties-historical':
+                    case 'states-historical':
+                        featuregroup.features.sort(function (p, q) {
+                            return p.properties.START < q.properties.START ? 1 : -1;
+                        });
+                        break;
+                }
+            });
 
             // ready; hand off
-            MAP.INSPECTORPANEL.loadFeatures(showfeatures);
+            MAP.INSPECTORPANEL.loadFeatures(collected_feature_groups);
         }
     });
     MAP.addControl(MAP.CLICKS);
@@ -531,10 +566,6 @@ var InspectorPanelControl = exports.InspectorPanelControl = function () {
             this._container = document.createElement("div");
             this._container.className = "mapboxgl-ctrl mbgl-control-inspectorpanel mbgl-control-inspectorpanel-closed";
 
-            var bigtitle = document.createElement("h2");
-            bigtitle.innerHTML = "What's Here?";
-            this._container.appendChild(bigtitle);
-
             this._listing = document.createElement("DIV");
             this._listing.className = 'mbgl-control-inspectorpanel-listing';
             this._container.appendChild(this._listing);
@@ -559,36 +590,60 @@ var InspectorPanelControl = exports.InspectorPanelControl = function () {
 
     }, {
         key: "loadFeatures",
-        value: function loadFeatures(features) {
+        value: function loadFeatures(featuregroups) {
             var _this = this;
 
-            //console.log([ 'loadFeatures()', features ]);
+            // console.log([ 'loadFeatures()', featuregroups ]);
 
             // empty the listing, without orphaning event handlers et al
             var range = document.createRange();
             range.selectNodeContents(this._listing);
             range.deleteContents();
 
-            // got nothing?: close the window and bail
-            if (!features || !features.length) {
-                this._container.classList.add('mbgl-control-inspectorpanel-closed');
+            // got nothing? close the window and bail
+            if (!featuregroups) {
+                this.closePanel();
                 return;
             }
+            this.openPanel();
 
-            // guess we're showing stuff
-            this._container.classList.remove('mbgl-control-inspectorpanel-closed');
-            features.forEach(function (feature) {
-                var thisitem = document.createElement("DIV");
-                thisitem.className = 'mbgl-control-inspectorpanel-item';
-                // console.log(feature);
+            // loop through feature groups; show their title, then a DIV full of their template results
+            featuregroups.forEach(function (featuregroup) {
+                if (!featuregroup.features.length) return; // no features = skip
 
-                var sourceid = feature.layer.source;
-                var htmlmaker = _this.options.templates[sourceid];
-                if (!htmlmaker) throw new Error("InspectorPanelControl for a feature with an unexpected source: " + sourceid);
-                thisitem.innerHTML = htmlmaker(feature);
+                // add the featuregroup DIV and the title
+                var thisgroup = document.createElement("DIV");
+                thisgroup.className = 'mbgl-control-inspectorpanel-featuregroup';
+                thisgroup.setAttribute('data-featuregroup', featuregroup.template);
+                _this._listing.appendChild(thisgroup);
 
-                _this._listing.appendChild(thisitem);
+                var thisgrouptitle = document.createElement("H2");
+                thisgrouptitle.innerHTML = featuregroup.title;
+                thisgroup.appendChild(thisgrouptitle);
+
+                // add each feature in this group, generating its HTML from the layergroup's template setting vs the templates passed to our initial setup
+                var htmlmaker = _this.options.templates[featuregroup.template];
+                if (!htmlmaker) throw new Error("InspectorPanelControl featuregroup with unexpected template: " + sourceid);
+                featuregroup.features.forEach(function (feature) {
+                    // console.log(feature);
+
+                    var thisitem = document.createElement("DIV");
+                    thisitem.className = 'mbgl-control-inspectorpanel-feature';
+                    thisitem.innerHTML = htmlmaker(feature);
+
+                    thisgroup.appendChild(thisitem);
+                });
             });
+        }
+    }, {
+        key: "closePanel",
+        value: function closePanel() {
+            this._container.classList.add('mbgl-control-inspectorpanel-closed');
+        }
+    }, {
+        key: "openPanel",
+        value: function openPanel() {
+            this._container.classList.remove('mbgl-control-inspectorpanel-closed');
         }
     }]);
 
@@ -1185,11 +1240,21 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
   },
   "sprite": "https://openmaptiles.github.io/osm-bright-gl-style/sprite",
   "glyphs": "https://free.tilehosting.com/fonts/{fontstack}/{range}.pbf?key=RiS4gsgZPZqeeMlIyxFo",
-  "layers": [{
+  "layers": [
+  /*
+   * BASEMAP OPTIONS
+   */
+  {
     "id": "basemap-light",
     "type": "raster",
     "source": "basemap-light"
-  }, {
+  },
+
+  /*
+   * HISTORICAL BOUNDARIES, the real meat of the matter
+   * these are likely to be broken up to form color-classifications
+   */
+  {
     "id": "state-boundaries-historical",
     "source": "states-historical",
     "source-layer": "states",
@@ -1204,20 +1269,6 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     },
     "filter": ['all', ["<=", "START", "9999/12/31"], [">", "END", "9999/12/31"]] // filter: start date and end date clauses, drop in a year to see what had any presence during that year
   }, {
-    "id": "state-boundaries-historical-hover",
-    "source": "states-historical",
-    "source-layer": "states",
-    "type": "fill",
-    "minzoom": STATES_MIN_ZOOM,
-    "paint": {
-      "fill-color": "white",
-      "fill-opacity": 0.5
-    },
-    "layout": {
-      "visibility": "visible"
-    },
-    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
-  }, {
     "id": "county-boundaries-historical",
     "source": "counties-historical",
     "source-layer": "counties",
@@ -1231,38 +1282,11 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
       "visibility": "none"
     },
     "filter": ['all', ["<=", "START", "9999/12/31"], [">", "END", "9999/12/31"]] // filter: start date and end date clauses, drop in a year to see what had any presence during that year
-  }, {
-    "id": "county-boundaries-historical-hover",
-    "source": "counties-historical",
-    "source-layer": "counties",
-    "type": "fill",
-    "minzoom": COUNTIES_MIN_ZOOM,
-    "paint": {
-      "fill-color": "white",
-      "fill-opacity": 0.5
-    },
-    "layout": {
-      "visibility": "visible"
-    },
-    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
   },
+
   /*
-  {
-    "id": "state-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
-    "source": "states-modern",
-    "source-layer": "states",
-    "type": "fill",
-    "minzoom": STATES_MIN_ZOOM,
-    "paint": {
-      "fill-color": "white",
-      "fill-opacity": 0,
-      "fill-outline-color": "rgb(0, 0, 0)",
-    },
-    "layout" : {
-      "visibility": "none",
-    },
-  },
-  */
+   * MODERN BOUNDARIES, for reference
+   */
   {
     "id": "state-boundaries-modern-line",
     "source": "states-modern",
@@ -1276,25 +1300,7 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     "layout": {
       "visibility": "none"
     }
-  },
-  /*
-  {
-    "id": "county-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
-    "source": "counties-modern",
-    "source-layer": "counties",
-    "type": "fill",
-    "minzoom": COUNTIES_MIN_ZOOM,
-    "paint": {
-      "fill-color": "white",
-      "fill-opacity": 0,
-      "fill-outline-color": "rgb(0, 0, 0)",
-    },
-    "layout" : {
-      "visibility": "none",
-    },
-  },
-  */
-  {
+  }, {
     "id": "county-boundaries-modern-line",
     "source": "counties-modern",
     "source-layer": "counties",
@@ -1307,15 +1313,93 @@ var GLMAP_STYLE = exports.GLMAP_STYLE = {
     "layout": {
       "visibility": "none"
     }
-  }, {
-    "id": "basemap-labels",
-    "type": "raster",
-    "source": "basemap-labels",
+  },
+
+  /*
+   * HOVER EFFECTS, same state/county shapes as above, but lighter color... and with a filter to match nothing until mouse movement changes the filter
+   */
+  {
+    "id": "county-boundaries-historical-hover",
+    "source": "counties-historical",
+    "source-layer": "counties",
+    "type": "fill",
+    "minzoom": COUNTIES_MIN_ZOOM,
     "paint": {
-      "raster-opacity": 0.50
+      "fill-color": "white",
+      "fill-opacity": 0.5
     },
     "layout": {
-      "visibility": "none"
+      "visibility": "visible"
+    },
+    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
+  }, {
+    "id": "state-boundaries-historical-hover",
+    "source": "states-historical",
+    "source-layer": "states",
+    "type": "fill",
+    "minzoom": STATES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "white",
+      "fill-opacity": 0.5
+    },
+    "layout": {
+      "visibility": "visible"
+    },
+    "filter": ["==", "IDNUM", -1] // for highlighting by this unique feature ID
+  },
+
+  /*
+   * CLICKABLES; the historical and modern boundaries data
+   * no filters, unclassified and with transparent fill
+   * so the map can be clicked to get info about everything in one go
+   */
+  {
+    "id": "counties-modern-clickable",
+    "source": "counties-modern",
+    "source-layer": "counties",
+    "type": "fill",
+    "minzoom": COUNTIES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "transparent"
+    },
+    "layout": {
+      "visibility": "visible"
+    }
+  }, {
+    "id": "states-modern-clickable",
+    "source": "states-modern",
+    "source-layer": "states",
+    "type": "fill",
+    "minzoom": STATES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "transparent"
+    },
+    "layout": {
+      "visibility": "visible"
+    }
+  }, {
+    "id": "counties-historical-clickable",
+    "source": "counties-historical",
+    "source-layer": "counties",
+    "type": "fill",
+    "minzoom": COUNTIES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "transparent"
+    },
+    "layout": {
+      "visibility": "visible"
+    }
+  }, {
+    "id": "states-historical-clickable",
+    "source": "states-historical",
+    "source-layer": "states",
+    "type": "fill",
+    "minzoom": STATES_MIN_ZOOM,
+    "paint": {
+      "fill-color": "transparent"
+    },
+    "layout": {
+      "visibility": "visible"
     }
   }]
 };
