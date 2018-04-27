@@ -293,8 +293,8 @@ $(document).ready(function () {
     MAP.addControl(new mapboxgl.NavigationControl());
 
     MAP.TIMESLIDER = new _mbglControlTimeslider.TimeSliderControl({
-        year: 1776,
-        min: 1776,
+        year: 1783,
+        min: 1783,
         max: 2000,
         step: 1,
         play_years: 5,
@@ -544,6 +544,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * panel.loadFeatures([ ... ... ... ]);
  */
 
+// WARNING: dependency on Glyphicons Pro for the icons
+
 __webpack_require__(51);
 
 var InspectorPanelControl = exports.InspectorPanelControl = function () {
@@ -563,8 +565,12 @@ var InspectorPanelControl = exports.InspectorPanelControl = function () {
         value: function onAdd(map) {
             this._map = map;
 
-            this._container = document.createElement("div");
+            this._container = document.createElement("DIV");
             this._container.className = "mapboxgl-ctrl mbgl-control-inspectorpanel mbgl-control-inspectorpanel-closed";
+
+            this._closebutton = document.createElement("I");
+            this._closebutton.className = 'mbgl-control-inspectorpanel-closebutton glyphicons glyphicons-remove-circle';
+            this._container.appendChild(this._closebutton);
 
             this._listing = document.createElement("DIV");
             this._listing.className = 'mbgl-control-inspectorpanel-listing';
@@ -986,6 +992,8 @@ Object.defineProperty(exports, "__esModule", {
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+// WARNING: dependency on Glyphicons Pro for the icons
 
 __webpack_require__(53);
 
