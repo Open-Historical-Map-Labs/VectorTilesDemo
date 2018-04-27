@@ -33,7 +33,8 @@ $(document).ready(function () {
         year: 1790,
         min: 1790,
         max: 2000,
-        step: 10,
+        step: 1,
+        play_years: 5,
         maplayerids: [ 'state-boundaries-historical', 'county-boundaries-historical' ],
     });
     MAP.addControl(MAP.TIMESLIDER);
