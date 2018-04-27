@@ -20,6 +20,7 @@
  * panel.loadFeatures([ ... ... ... ]);
  */
 
+// WARNING: dependency on Glyphicons Pro for the icons
 
 require('./mbgl-control-inspectorpanel.scss');
 
@@ -34,8 +35,12 @@ export class InspectorPanelControl {
     onAdd (map) {
         this._map = map;
 
-        this._container = document.createElement("div");
+        this._container = document.createElement("DIV");
         this._container.className = "mapboxgl-ctrl mbgl-control-inspectorpanel mbgl-control-inspectorpanel-closed";
+
+        this._closebutton = document.createElement("I");
+        this._closebutton.className = 'mbgl-control-inspectorpanel-closebutton glyphicons glyphicons-remove-circle';
+        this._container.appendChild(this._closebutton);
 
         this._listing = document.createElement("DIV");
         this._listing.className = 'mbgl-control-inspectorpanel-listing';

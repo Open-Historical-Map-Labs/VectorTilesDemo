@@ -1,3 +1,5 @@
+// WARNING: dependency on Glyphicons Pro for the icons
+
 require('./mbgl-control-timeslider.scss');
 
 export class TimeSliderControl {

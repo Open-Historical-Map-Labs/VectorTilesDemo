@@ -16,9 +16,18 @@ div.mapboxgl-ctrl.mbgl-control-inspectorpanel {
         margin-left: -2em;
     }
 
+    i.mbgl-control-inspectorpanel-closebutton {
+        cursor: pointer;
+        float: right;
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
     div.mbgl-control-inspectorpanel-listing {
         max-height: calc(100vh - 160px);
         overflow: auto;
+
+        clear: both;  /* so the closebutton comes above it */
 
         div.mbgl-control-inspectorpanel-featuregroup {
             border-top: 2px solid black;
