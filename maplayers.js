@@ -66,11 +66,19 @@ export const GLMAP_STYLE = {
   "sprite": "https://openmaptiles.github.io/osm-bright-gl-style/sprite",
   "glyphs": "https://free.tilehosting.com/fonts/{fontstack}/{range}.pbf?key=RiS4gsgZPZqeeMlIyxFo",
   "layers": [
+    /*
+     * BASEMAP OPTIONS
+     */
     {
       "id": "basemap-light",
       "type": "raster",
       "source": "basemap-light",
     },
+
+    /*
+     * HISTORICAL BOUNDARIES, the real meat of the matter
+     * these are likely to be broken up to form color-classifications
+     */
     {
       "id": "state-boundaries-historical",
       "source": "states-historical",
@@ -87,21 +95,6 @@ export const GLMAP_STYLE = {
       "filter": [ 'all', [ "<=", "START", "9999/12/31" ], [ ">", "END", "9999/12/31" ] ],  // filter: start date and end date clauses, drop in a year to see what had any presence during that year
     },
     {
-      "id": "state-boundaries-historical-hover",
-      "source": "states-historical",
-      "source-layer": "states",
-      "type": "fill",
-      "minzoom": STATES_MIN_ZOOM,
-      "paint": {
-        "fill-color": "white",
-        "fill-opacity": 0.5,
-      },
-      "layout" : {
-        "visibility": "visible",
-      },
-      "filter": [ "==", "IDNUM", -1 ],  // for highlighting by this unique feature ID
-    },
-    {
       "id": "county-boundaries-historical",
       "source": "counties-historical",
       "source-layer": "counties",
@@ -116,6 +109,42 @@ export const GLMAP_STYLE = {
       },
       "filter": [ 'all', [ "<=", "START", "9999/12/31" ], [ ">", "END", "9999/12/31" ] ],  // filter: start date and end date clauses, drop in a year to see what had any presence during that year
     },
+
+    /*
+     * MODERN BOUNDARIES, for reference
+     */
+    {
+      "id": "state-boundaries-modern-line",
+      "source": "states-modern",
+      "source-layer": "states",
+      "type": "line",
+      "minzoom": STATES_MIN_ZOOM,
+      "paint": {
+        "line-color": "black",
+        "line-width": 4,
+      },
+      "layout" : {
+        "visibility": "none",
+      },
+    },
+    {
+      "id": "county-boundaries-modern-line",
+      "source": "counties-modern",
+      "source-layer": "counties",
+      "type": "line",
+      "minzoom": COUNTIES_MIN_ZOOM,
+      "paint": {
+        "line-color": "black",
+        "line-width": 2,
+      },
+      "layout" : {
+        "visibility": "none",
+      },
+    },
+
+    /*
+     * HOVER EFFECTS, same state/county shapes as above, but lighter color... and with a filter to match nothing until mouse movement changes the filter
+     */
     {
       "id": "county-boundaries-historical-hover",
       "source": "counties-historical",
@@ -131,68 +160,84 @@ export const GLMAP_STYLE = {
       },
       "filter": [ "==", "IDNUM", -1 ],  // for highlighting by this unique feature ID
     },
-    /*
     {
-      "id": "state-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
-      "source": "states-modern",
+      "id": "state-boundaries-historical-hover",
+      "source": "states-historical",
       "source-layer": "states",
       "type": "fill",
       "minzoom": STATES_MIN_ZOOM,
       "paint": {
         "fill-color": "white",
-        "fill-opacity": 0,
-        "fill-outline-color": "rgb(0, 0, 0)",
+        "fill-opacity": 0.5,
       },
       "layout" : {
-        "visibility": "none",
+        "visibility": "visible",
       },
+      "filter": [ "==", "IDNUM", -1 ],  // for highlighting by this unique feature ID
     },
-    */
-    {
-      "id": "state-boundaries-modern-line",
-      "source": "states-modern",
-      "source-layer": "states",
-      "type": "line",
-      "minzoom": STATES_MIN_ZOOM,
-      "paint": {
-        "line-color": "black",
-        "line-width": 4,
-      },
-      "layout" : {
-        "visibility": "none",
-      },
-    },
+
     /*
+     * CLICKABLES; the historical and modern boundaries data
+     * no filters, unclassified and with transparent fill
+     * so the map can be clicked to get info about everything in one go
+     */
     {
-      "id": "county-boundaries-modern-fill",  // invisible fill, but necessary to handle mouse events or place vector labels
+      "id": "counties-modern-clickable",
       "source": "counties-modern",
       "source-layer": "counties",
       "type": "fill",
       "minzoom": COUNTIES_MIN_ZOOM,
       "paint": {
-        "fill-color": "white",
-        "fill-opacity": 0,
-        "fill-outline-color": "rgb(0, 0, 0)",
+        "fill-color": "transparent",
       },
       "layout" : {
-        "visibility": "none",
+        "visibility": "visible",
       },
     },
-    */
     {
-      "id": "county-boundaries-modern-line",
-      "source": "counties-modern",
+      "id": "states-modern-clickable",
+      "source": "states-modern",
+      "source-layer": "states",
+      "type": "fill",
+      "minzoom": STATES_MIN_ZOOM,
+      "paint": {
+        "fill-color": "transparent",
+      },
+      "layout" : {
+        "visibility": "visible",
+      },
+    },
+    {
+      "id": "counties-historical-clickable",
+      "source": "counties-historical",
       "source-layer": "counties",
-      "type": "line",
+      "type": "fill",
       "minzoom": COUNTIES_MIN_ZOOM,
       "paint": {
-        "line-color": "black",
-        "line-width": 2,
+        "fill-color": "transparent",
       },
       "layout" : {
-        "visibility": "none",
+        "visibility": "visible",
       },
     },
+    {
+      "id": "states-historical-clickable",
+      "source": "states-historical",
+      "source-layer": "states",
+      "type": "fill",
+      "minzoom": STATES_MIN_ZOOM,
+      "paint": {
+        "fill-color": "transparent",
+      },
+      "layout" : {
+        "visibility": "visible",
+      },
+    },
+
+    /*
+     * LABELS, over top of everything else
+     */
+    /*
     {
       "id": "basemap-labels",
       "type": "raster",
@@ -204,5 +249,6 @@ export const GLMAP_STYLE = {
         "visibility": "none"
       }
     }
+    */
   ]
 };

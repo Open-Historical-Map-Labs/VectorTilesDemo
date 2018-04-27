@@ -100,15 +100,9 @@ $(document).ready(function () {
 
     MAP.CLICKS = new MapClicksControl({
         click: function (clickevent) {
-            // this version queries a box around the click, which is overkill for our use case of all polygons
-            // but some day we'll add points and lines, then increasing pxbuffer to 3 will make it easier to click those
-            const clicklayers   = [ 'state-boundaries-historical', 'county-boundaries-historical' ];
-            const pxbuffer      = 1;
-            const canvas        = MAP.getCanvasContainer();
-            const rect          = canvas.getBoundingClientRect();
-            const glpoint       = new mapboxgl.Point(clickevent.originalEvent.clientX - rect.left - canvas.clientLeft, clickevent.originalEvent.clientY - rect.top - canvas.clientTop);
-            const pixelbox      = [ [glpoint.x - pxbuffer, glpoint.y - pxbuffer], [glpoint.x + pxbuffer, glpoint.y + pxbuffer] ];
-            const features      = MAP.queryRenderedFeatures(pixelbox, { layers: clicklayers });
+            // find what's at the click
+            const clicklayers   = [ 'counties-modern-clickable', 'states-modern-clickable', 'counties-historical-clickable', 'states-historical-clickable' ];
+            const features      = MAP.queryRenderedFeatures(clickevent.point, { layers: clicklayers });
 
             // unique-ify the features; MBGL is documented to return duplicates when features span tiles
             const uniques = {};
