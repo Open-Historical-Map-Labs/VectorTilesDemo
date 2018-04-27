@@ -30,8 +30,8 @@ $(document).ready(function () {
     MAP.addControl(new mapboxgl.NavigationControl());
 
     MAP.TIMESLIDER = new TimeSliderControl({
-        year: 1790,
-        min: 1790,
+        year: 1776,
+        min: 1776,
         max: 2000,
         step: 1,
         play_years: 5,
