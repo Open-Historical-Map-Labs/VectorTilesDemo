@@ -8,5 +8,21 @@ div.mapboxgl-ctrl.mbgl-control-timeslider {
     input[type="range"] {
         width: 100%;
         margin-top: 5px; /* visual vertical balance */
+        display: block;
+    }
+
+    div.mbgl-control-timeslider-readout {
+        display: inline-block;
+        font-weight: bold;
+        font-size: 12px;
+        margin-right: 5em;
+    }
+
+    div.mbgl-control-timeslider-buttons {
+        display: inline-block;
+
+        button {
+            cursor: pointer;
+        }
     }
 }
