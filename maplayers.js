@@ -9,7 +9,7 @@
  * and it's the LayerPickerControl which will change the visibility of these layers (that's why they're all "none" right now)
  */
 
-export const VECTILES_BASE_URL = "http://ec2-54-202-248-255.us-west-2.compute.amazonaws.com/ohm/tiles/";
+export const VECTILES_BASE_URL = "https://ohm-demo.s3.amazonaws.com/tiles/";
 
 export const STATES_MIN_ZOOM = 3;
 export const COUNTIES_MIN_ZOOM = 6;
