@@ -29,9 +29,12 @@ $(document).ready(function () {
 
     MAP.addControl(new mapboxgl.NavigationControl());
 
+    // for this demo, the Newberry data
+    // 1629 is the Plymouth land grant, the first county/township
+    // 1783 is the Treaty of Paris, where US states became legit (despite the US saying they were legit in 1776)
     MAP.TIMESLIDER = new TimeSliderControl({
         year: 1783,
-        min: 1783,
+        min: 1630,
         max: 2000,
         step: 1,
         play_years: 5,
