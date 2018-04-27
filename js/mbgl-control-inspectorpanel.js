@@ -37,10 +37,6 @@ export class InspectorPanelControl {
         this._container = document.createElement("div");
         this._container.className = "mapboxgl-ctrl mbgl-control-inspectorpanel mbgl-control-inspectorpanel-closed";
 
-        const bigtitle = document.createElement("h2");
-        bigtitle.innerHTML = "What's Here?";
-        this._container.appendChild(bigtitle);
-
         this._listing = document.createElement("DIV");
         this._listing.className = 'mbgl-control-inspectorpanel-listing';
         this._container.appendChild(this._listing);
@@ -60,33 +56,55 @@ export class InspectorPanelControl {
 
     // hand this control a set of new features to show their info
     // null or an empty list, will hide the panel
-    loadFeatures (features) {
-        //console.log([ 'loadFeatures()', features ]);
+    loadFeatures (featuregroups) {
+        // console.log([ 'loadFeatures()', featuregroups ]);
 
         // empty the listing, without orphaning event handlers et al
         var range = document.createRange();
         range.selectNodeContents(this._listing);
         range.deleteContents();
 
-        // got nothing?: close the window and bail
-        if (! features || ! features.length) {
-            this._container.classList.add('mbgl-control-inspectorpanel-closed');
+        // got nothing? close the window and bail
+        if (! featuregroups) {
+            this.closePanel();
             return;
         }
+        this.openPanel();
 
-        // guess we're showing stuff
-        this._container.classList.remove('mbgl-control-inspectorpanel-closed');
-        features.forEach((feature) => {
-            const thisitem = document.createElement("DIV");
-            thisitem.className = 'mbgl-control-inspectorpanel-item';
-            // console.log(feature);
+        // loop through feature groups; show their title, then a DIV full of their template results
+        featuregroups.forEach((featuregroup) => {
+            if (! featuregroup.features.length) return;  // no features = skip
 
-            const sourceid = feature.layer.source;
-            const htmlmaker = this.options.templates[sourceid];
-            if (! htmlmaker) throw new Error(`InspectorPanelControl for a feature with an unexpected source: ${sourceid}`);
-            thisitem.innerHTML = htmlmaker(feature);
+            // add the featuregroup DIV and the title
+            const thisgroup = document.createElement("DIV");
+            thisgroup.className = 'mbgl-control-inspectorpanel-featuregroup';
+            thisgroup.setAttribute('data-featuregroup', featuregroup.template);
+            this._listing.appendChild(thisgroup);
 
-            this._listing.appendChild(thisitem);
+            const thisgrouptitle = document.createElement("H2");
+            thisgrouptitle.innerHTML = featuregroup.title;
+            thisgroup.appendChild(thisgrouptitle);
+
+            // add each feature in this group, generating its HTML from the layergroup's template setting vs the templates passed to our initial setup
+            const htmlmaker = this.options.templates[featuregroup.template];
+            if (! htmlmaker) throw new Error(`InspectorPanelControl featuregroup with unexpected template: ${sourceid}`);
+            featuregroup.features.forEach((feature) => {
+                // console.log(feature);
+
+                const thisitem = document.createElement("DIV");
+                thisitem.className = 'mbgl-control-inspectorpanel-feature';
+                thisitem.innerHTML = htmlmaker(feature);
+
+                thisgroup.appendChild(thisitem);
+            });
         });
+    }
+
+    closePanel () {
+        this._container.classList.add('mbgl-control-inspectorpanel-closed');
+    }
+
+    openPanel () {
+        this._container.classList.remove('mbgl-control-inspectorpanel-closed');
     }
 }

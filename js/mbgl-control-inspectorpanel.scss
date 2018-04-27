@@ -20,14 +20,24 @@ div.mapboxgl-ctrl.mbgl-control-inspectorpanel {
         max-height: calc(100vh - 160px);
         overflow: auto;
 
-        div.mbgl-control-inspectorpanel-item {
-            border-bottom: 2px solid silver;
+        div.mbgl-control-inspectorpanel-featuregroup {
+            border-top: 2px solid black;
+            &:first-child {
+                  border-top: 0 none transparent;
+            }
 
-            padding-bottom: 0.5em;
-            padding-top: 0.5em;
+            h2 {
+                margin: 0;
+            }
 
-            &:last-child {
-                  border-bottom: 0 none transparent;
+            div.mbgl-control-inspectorpanel-feature {
+                padding-bottom: 0.5em;
+                padding-top: 0.5em;
+
+                border-top: 2px solid silver;
+                &:first-child {
+                      border-top: 0 none transparent;
+                }
             }
         }
     }

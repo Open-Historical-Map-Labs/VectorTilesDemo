@@ -44,18 +44,24 @@ $(document).ready(function () {
 
     MAP.INSPECTORPANEL = new InspectorPanelControl({
         templates: {
+            'states-modern': function (feature) {
+                return `${feature.properties.STATE_NAME}`;
+            },
+            'counties-modern': function (feature) {
+                return `${feature.properties.NAME} County`;
+            },
             'states-historical': function (feature) {
                 return `
-                    State: ${feature.properties.NAME}<br/>
-                    Dates: ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}
-                    <div>${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
+                    <b>${feature.properties.NAME}, ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}</b>
+                    <br/>
+                    <div class="small">${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
                 `;
             },
             'counties-historical': function (feature) {
                 return `
-                    County: ${feature.properties.NAME}<br/>
-                    Dates: ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}
-                    <div>${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
+                    <b>${feature.properties.NAME}, ${feature.properties.START} - ${feature.properties.END != '9999/12/31' ? feature.properties.END : 'Present'}</b>
+                    <br/>
+                    <div class="small">${feature.properties.CHANGE} ${feature.properties.CITATION}</div>
                 `;
             },
         }
@@ -100,19 +106,58 @@ $(document).ready(function () {
 
     MAP.CLICKS = new MapClicksControl({
         click: function (clickevent) {
-            // find what's at the click
-            const clicklayers   = [ 'counties-modern-clickable', 'states-modern-clickable', 'counties-historical-clickable', 'states-historical-clickable' ];
-            const features      = MAP.queryRenderedFeatures(clickevent.point, { layers: clicklayers });
+            // one layer at a time, compile the history of thisd point location
+            // past state/territory status and modern state
+            // past county/township status and modern county
+            // the inspector panel expects a list of result sets, with a title and a list of results and a spec as to which layout template to use
+            //
+            // warning: a known "feature" of vector tile querying like this, is that it ONLY OPERATES ON WHAT'S VISIBLE IN THE VIEWPORT
+            // e.g. no counties until you've zoomed in
+            const collected_feature_groups = [
+                {
+                    title: "Present Day",
+                    template: 'states-modern',
+                    features: MAP.queryRenderedFeatures(clickevent.point, { layers: [ 'states-modern-clickable' ] }),
+                },
+                {
+                    title: "Present County/Township",
+                    template: 'counties-modern',
+                    features: MAP.queryRenderedFeatures(clickevent.point, { layers: [ 'counties-modern-clickable' ] }),
+                },
+                {
+                    title: "Historical State/Territory",
+                    template: 'states-historical',
+                    features: MAP.queryRenderedFeatures(clickevent.point, { layers: [ 'states-historical-clickable' ] }),
+                },
+                {
+                    title: "Historical County/Township",
+                    template: 'counties-historical',
+                    features: MAP.queryRenderedFeatures(clickevent.point, { layers: [ 'counties-historical-clickable' ] }),
+                },
+            ];
 
-            // unique-ify the features; MBGL is documented to return duplicates when features span tiles
-            const uniques = {};
-            features.forEach((feature) => {
-                uniques[feature.properties.IDNUM] = feature;
+            // unique-ify each set of features by its IDNUM; MBGL is documented to return duplicates when features span tiles
+            // the modern datasets lack an IDNUM which is okay: there will only be one feature (if any), with a key of undefined, so we still end up with 1 feature afterward (if any)
+            collected_feature_groups.forEach(function (featuregroup) {
+                const uniques = {};
+                featuregroup.features.forEach(function (feature) {
+                    uniques[feature.properties.IDNUM] = feature;
+                });
+                featuregroup.features = Object.values(uniques);
             });
-            const showfeatures = Object.values(uniques);
+            collected_feature_groups.forEach(function (featuregroup) {
+                switch (featuregroup.template) {
+                    case 'counties-historical':
+                    case 'states-historical':
+                        featuregroup.features.sort(function (p, q) {
+                            return p.properties.START < q.properties.START ? 1 : -1;
+                        });
+                        break;
+                }
+            });
 
             // ready; hand off
-            MAP.INSPECTORPANEL.loadFeatures(showfeatures);
+            MAP.INSPECTORPANEL.loadFeatures(collected_feature_groups);
         },
     });
     MAP.addControl(MAP.CLICKS);
