@@ -1112,7 +1112,7 @@ var TimeSliderControl = exports.TimeSliderControl = function () {
             this._readout.innerHTML = this._slider.value;
 
             var year = this._slider.value;
-            var startdate = parseInt(year) + '/01/01';
+            var startdate = parseInt(year) + '/12/31';
             var enddate = parseInt(year) + '/12/31';
             var layerids = this.options.maplayerids;
 
