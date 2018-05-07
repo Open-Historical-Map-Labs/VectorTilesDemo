@@ -35,29 +35,37 @@ Modern boundaries:
 * Removed attributes to have only NAME and STATE (for counties) or just NAME (for states).
 * 
 
-Converted shapefiles to GeoJSON, then converted to on-disk vector tiles using Tippecanoe:
+Converted shapefiles to GeoJSON.
 ```
-ogr2ogr -t_srs epsg:4326 -overwrite -f GeoJSON states-historical.geojson US_HistStateTerr_Gen0001.shp
-ogr2ogr -t_srs epsg:4326 -overwrite -f GeoJSON counties.geojson -historicalUS_HistCounties_Gen0001.shp
+rm -f states-historical.geojson
+ogr2ogr -t_srs epsg:4326 -f GeoJSON states-historical.geojson US_HistStateTerr_Gen0001.shp
+
+rm -f counties-historical.geojson
+ogr2ogr -t_srs epsg:4326 -f GeoJSON counties-historical.geojson US_HistCounties_Gen0001.shp
+
+rm -f states-modern.geojson
 ogr2ogr -t_srs epsg:4326 -f GeoJSON states-modern.geojson states-modern.shp
+
+rm -f counties-modern.geojson
 ogr2ogr -t_srs epsg:4326 -f GeoJSON counties-modern.geojson counties-modern.shp
 ```
 
+Converted to on-disk vector tiles using Tippecanoe.
 ```
 rm -rf states-historical
 tippecanoe --output-to-directory=./states-historical -l states --minimum-zoom=3 --maximum-zoom=10 --no-tile-compression --simplification=5 --detect-shared-borders states-historical.geojson
 
 rm -rf counties-historical
-tippecanoe --output-to-directory=./counties-historical -l counties --minimum-zoom=6 --maximum-zoom=10 --no-tile-compression --simplification=5 --detect-shared-borders counties-historical.geojson
+tippecanoe --output-to-directory=./counties-historical -l counties --minimum-zoom=6 --maximum-zoom=10 --no-tile-compression --simplification=5  --detect-shared-borders counties-historical.geojson
 
 rm -rf states-modern
 tippecanoe --output-to-directory=./states-modern -l states --minimum-zoom=3 --maximum-zoom=10 --no-tile-compression --simplification=5 --detect-shared-borders states-modern.geojson
 
 rm -rf counties-modern
-tippecanoe --output-to-directory=./counties-modern -l counties --minimum-zoom=6 --maximum-zoom=10 --no-tile-compression --simplification=5 --detect-shared-borders counties-modern.geojson
+tippecanoe --output-to-directory=./counties-modern -l counties --minimum-zoom=6 --maximum-zoom=10 --no-tile-compression --simplification=5  --detect-shared-borders counties-modern.geojson
 ```
 
-Sizes and metrics:
+Sizes and metrics (z6+):
 * Shapefiles after attribute pruning: State = 68 MB, County = 384 MB
 * GeoJSON files: State = 190 MB, County = 1.1 GB
 * Tile counts: State = 22361 tiles, County = 22317 tiles
@@ -68,7 +76,7 @@ Notes and warnings:
   * Tippecanoe refuses to create a vector tile larger than 500 KB in size. Even if this could be overridden, it would be infeasible to have a map client download many simultaneous tiles of this size or larger.
   * To reduce the data volume, simplification is performed on the shapes. However, attribute data for thousands of historical counties and districts is still voluminous.
   * In the case of county data, at zoom level 5 and further out, vector tiles cannot be created with the data as-given without deleting some features (typically, the smallest features are chosen first). However, the visual effect of this is unpleasant: at zoom 5 on a large display, a significant portion of the eastern seaboard is displayed and exhibits a large gap where many counties are omitted. These may be the smallest counties (as is typical for the east coast of the USA) but they form visible gaps and in this case some of the visible gaps are very large. *These are not an artifact of client-side date filtering*, but of the data being omitted from the vector tileset entirely in order to bring it into size compliance.
-  * The most expedient workaround was to start at z6, but at this scale some tiles barely slip under the 500 KB limit. For a larger situation in which one expects to be adding new data, new strategies would need to be created to "partition" the data into multiple sources, then display these multiple sources together as if they were one. (Example, segregate historical counties into 20 separate sources, each one representing a 25-year slice of time and containing only attributes active during that time slice.)
+  * The most expedient workaround was to start at z6 and to bring in some simplification, but at this scale some tiles *barely* slip under the 500 KB limit. For a larger situation in which one expects to be adding new data, new strategies would need to be created to "partition" the data into multiple sources, then display these multiple sources together as if they were one. (Example, segregate historical counties into 20 separate sources, each one representing a 25-year slice of time and containing only attributes active during that time slice.)
 
 
 ## For Developers
